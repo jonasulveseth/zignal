@@ -1,0 +1,277 @@
+{% extends "layouts/base.html" %} {% block title %}Zignal AI Chat{% endblock %}
+{% block content %}
+<section class="py-12">
+  <div class="max-w-4xl mx-auto px-4">
+    <h1 class="text-3xl font-bold mb-8">Chat with Zignal AI</h1>
+
+    <div class="mb-6">
+      <label
+        for="agent-select"
+        class="block text-sm font-medium text-gray-700 mb-2"
+        >Select an AI Agent</label
+      >
+      <select
+        id="agent-select"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+      >
+        <option value="">Select an agent...</option>
+      </select>
+    </div>
+
+    <div class="mb-6">
+      <button
+        id="create-conversation"
+        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Start New Conversation
+      </button>
+    </div>
+
+    <div
+      id="chat-container"
+      class="bg-white rounded-lg shadow-lg p-4 mb-4 min-h-[400px] max-h-[600px] overflow-y-auto hidden"
+    >
+      <div id="messages" class="space-y-4"></div>
+    </div>
+
+    <div id="chat-input-container" class="flex items-center space-x-2 hidden">
+      <input
+        type="text"
+        id="message-input"
+        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        placeholder="Type your message here..."
+      />
+      <button
+        id="send-message"
+        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+      >
+        Send
+      </button>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // DOM elements
+    const agentSelect = document.getElementById("agent-select");
+    const createConversationBtn = document.getElementById(
+      "create-conversation"
+    );
+    const chatContainer = document.getElementById("chat-container");
+    const messages = document.getElementById("messages");
+    const chatInputContainer = document.getElementById("chat-input-container");
+    const messageInput = document.getElementById("message-input");
+    const sendMessageBtn = document.getElementById("send-message");
+
+    // Variables
+    let currentAgentId = null;
+    let currentConversationId = null;
+
+    // Fetch agents
+    const fetchAgents = async () => {
+      try {
+        const response = await fetch("/api/agents/");
+        const data = await response.json();
+
+        agentSelect.innerHTML = '<option value="">Select an agent...</option>';
+        data.agents.forEach((agent) => {
+          const option = document.createElement("option");
+          option.value = agent.id;
+          option.textContent = `${agent.name} (${agent.agent_type})`;
+          agentSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error("Error fetching agents:", error);
+        alert("Error loading agents. Please try again later.");
+      }
+    };
+
+    // Create a new conversation
+    const createConversation = async () => {
+      const agentId = agentSelect.value;
+      if (!agentId) {
+        alert("Please select an agent first.");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/conversations/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrfToken(),
+          },
+          body: JSON.stringify({
+            agent_id: agentId,
+            title: "New Conversation",
+          }),
+        });
+
+        const data = await response.json();
+        currentConversationId = data.id;
+        currentAgentId = agentId;
+
+        // Show chat interface
+        chatContainer.classList.remove("hidden");
+        chatInputContainer.classList.remove("hidden");
+
+        // Clear messages
+        messages.innerHTML = "";
+
+        // Add system message
+        addMessage("system", "Conversation started. Say hello to the AI!");
+
+        // Disable create button
+        createConversationBtn.disabled = true;
+        agentSelect.disabled = true;
+      } catch (error) {
+        console.error("Error creating conversation:", error);
+        alert("Error creating conversation. Please try again later.");
+      }
+    };
+
+    // Send a message
+    const sendMessage = async () => {
+      const message = messageInput.value.trim();
+      if (!message || !currentConversationId) return;
+
+      // Add user message to UI
+      addMessage("user", message);
+
+      // Clear input
+      messageInput.value = "";
+
+      try {
+        // Create typing indicator
+        const typingIndicator = document.createElement("div");
+        typingIndicator.id = "typing-indicator";
+        typingIndicator.className =
+          "p-3 bg-gray-100 rounded-lg max-w-[80%] ml-auto";
+        typingIndicator.textContent = "AI is typing...";
+        messages.appendChild(typingIndicator);
+
+        // Use streaming endpoint
+        const eventSource = new EventSource(
+          `/api/conversations/${currentConversationId}/stream/?message=${encodeURIComponent(
+            message
+          )}`
+        );
+
+        let assistantMessage = "";
+
+        eventSource.onmessage = function (event) {
+          const data = JSON.parse(event.data);
+          assistantMessage += data.content;
+
+          // Update or create the assistant message
+          const existingMessage = document.getElementById(
+            "current-assistant-message"
+          );
+          if (existingMessage) {
+            existingMessage.textContent = assistantMessage;
+          } else {
+            // Remove typing indicator
+            const typingIndicator = document.getElementById("typing-indicator");
+            if (typingIndicator) {
+              typingIndicator.remove();
+            }
+
+            // Add new assistant message
+            const messageEl = document.createElement("div");
+            messageEl.id = "current-assistant-message";
+            messageEl.className = "p-3 bg-blue-100 rounded-lg max-w-[80%]";
+            messageEl.textContent = assistantMessage;
+            messages.appendChild(messageEl);
+          }
+
+          // Scroll to bottom
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        };
+
+        eventSource.onerror = function (error) {
+          console.error("Error with SSE:", error);
+          eventSource.close();
+
+          // Remove typing indicator
+          const typingIndicator = document.getElementById("typing-indicator");
+          if (typingIndicator) {
+            typingIndicator.remove();
+          }
+
+          // Add error message if no response was received
+          if (!assistantMessage) {
+            addMessage(
+              "system",
+              "Error: Could not get a response from the AI."
+            );
+          }
+
+          // Remove the id from the assistant message so new ones can be created
+          const currentMessage = document.getElementById(
+            "current-assistant-message"
+          );
+          if (currentMessage) {
+            currentMessage.id = "";
+          }
+        };
+
+        // Close the connection when complete
+        setTimeout(() => {
+          eventSource.close();
+
+          // Remove the id from the assistant message
+          const currentMessage = document.getElementById(
+            "current-assistant-message"
+          );
+          if (currentMessage) {
+            currentMessage.id = "";
+          }
+        }, 60000); // Timeout after 1 minute just in case
+      } catch (error) {
+        console.error("Error sending message:", error);
+        addMessage("system", "Error sending message. Please try again.");
+      }
+    };
+
+    // Add a message to the UI
+    const addMessage = (role, content) => {
+      const messageEl = document.createElement("div");
+
+      if (role === "user") {
+        messageEl.className =
+          "p-3 bg-blue-500 text-white rounded-lg max-w-[80%] ml-auto";
+      } else if (role === "assistant") {
+        messageEl.className = "p-3 bg-blue-100 rounded-lg max-w-[80%]";
+      } else {
+        messageEl.className = "p-2 text-sm text-gray-500 italic text-center";
+      }
+
+      messageEl.textContent = content;
+      messages.appendChild(messageEl);
+
+      // Scroll to bottom
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    };
+
+    // Helper function to get CSRF token
+    const getCsrfToken = () => {
+      return document.querySelector("[name=csrfmiddlewaretoken]").value;
+    };
+
+    // Event listeners
+    createConversationBtn.addEventListener("click", createConversation);
+
+    sendMessageBtn.addEventListener("click", sendMessage);
+
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    // Initialize
+    fetchAgents();
+  });
+</script>
+{% endblock %}

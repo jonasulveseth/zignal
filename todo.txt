@@ -1,0 +1,92 @@
+# ZiGNAL Django Project Todo List
+
+## 🧱 PHASE 1: Base Structure & Models
+- [x] Initialize Django project with PostgreSQL, Celery, and Redis
+- [x] Create User model (Custom with AbstractUser)
+- [x] Create a landing page design and layout structure
+- [ ] Create Company model
+- [ ] Create Project model
+- [ ] Create UserCompanyRelation and UserProjectRelation models
+- [ ] Create AIAgent model
+- [ ] Create DataSilo and DataFile models
+- [ ] Create Report model
+- [ ] Connect models via ForeignKey and ManyToMany relationships
+- [ ] Create migrations
+- [ ] Set up admin panel for testing
+
+## 🔐 PHASE 2: Authentication & Permissions
+- [ ] Implement email login with django-allauth or django-rest-auth
+- [ ] Create role-based permission system (admin/member per company/project)
+- [ ] Develop email invitation flow for companies/projects
+- [ ] Set up password reset functionality
+- [ ] Add session management
+- [ ] Create user profile views
+
+## 📂 PHASE 3: File Upload & Vector Storage
+- [ ] Implement file upload via frontend/API
+- [ ] Store file metadata in DataFile model
+- [ ] Connect content storage to DataSilo
+- [ ] Integrate vector database (Weaviate, Qdrant, Pinecone, or FAISS)
+- [ ] Create pipeline for content extraction
+- [ ] Implement embedding generation with OpenAI/transformers
+- [ ] Add file validation and security checks
+- [ ] Create file browsing interface
+
+## 🤖 PHASE 4: AI Agent & OpenAI Integration
+- [ ] Create agent model per project
+- [ ] Implement OpenAI API wrapper
+- [ ] Set up streaming responses via websockets or SSE
+- [ ] Configure AI to access project documents in DataSilo
+- [ ] Implement conversation history
+- [ ] Create prompt templates
+- [ ] Add rate limiting and usage tracking
+- [ ] Implement fallback mechanisms
+
+## 📊 PHASE 5: Report Module
+- [ ] Create report template system with commands
+- [ ] Implement document validation for report requirements
+- [ ] Develop AI response generation for reports
+- [ ] Store report history
+- [ ] Associate reports with projects/companies
+- [ ] Add export options (PDF, etc.)
+- [ ] Create report scheduling functionality
+- [ ] Implement notifications for report completion
+
+## 💬 PHASE 6: Communication (Chat, Meetings, Email)
+- [ ] Build global AI chat for portfolio managers
+- [ ] Integrate meeting bot (Google Meet API + transcription)
+- [ ] Set up email reception (Mailgun or webhook)
+- [ ] Connect chat memory to DataSilo
+- [ ] Implement chat interface
+- [ ] Create communication archive
+- [ ] Add search functionality for past communications
+- [ ] Set up real-time notifications
+
+## 🌍 PHASE 7: Frontend & Dashboard
+- [ ] Create role-specific dashboards (portfolio vs. company owner)
+- [ ] Build report overview interface
+- [ ] Implement AI chat UI
+- [ ] Develop file management interface
+- [ ] Create report generator UI
+- [ ] Add functionality to share reports with external recipients
+- [ ] Implement websockets for real-time AI feedback
+- [ ] Create responsive design for mobile access
+
+## 🔒 PHASE 8: Security & Deployment
+- [ ] Add OAuth2 / BankID / Azure AD support
+- [ ] Set up Celery tasks for AI processing & transcription
+- [ ] Implement logging and audit trails
+- [ ] Refine permission logic
+- [ ] Create Docker-compose setup
+- [ ] Configure CI/CD pipeline
+- [ ] Set up hosting (Railway, Fly.io, Render, or AWS)
+- [ ] Implement backup strategy
+- [ ] Create monitoring and alerting
+- [ ] Perform security audit
+
+## Development Environments
+- [ ] Configure development environment
+- [ ] Set up testing environment
+- [ ] Prepare production environment
+- [ ] Create environment-specific configuration
+- [ ] Document environment setup process
