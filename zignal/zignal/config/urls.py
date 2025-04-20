@@ -16,11 +16,41 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from django.views.generic.base import RedirectView
 from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path('chat/', views.chat, name='chat'),
+    
+    # Test view
+    path('test/', views.test_view, name='test_view'),
+    path('test-base/', views.test_base_view, name='test_base_view'),
+    
+    # django-allauth URLs - main authentication system
+    path('accounts/', include('allauth.urls')),
+    
+    # Custom signup view for debugging
+    path('accounts/custom-signup/', views.custom_signup, name='custom_signup'),
+    
+    # Test template for debugging
+    path('test-template/', views.test_template, name='test_template'),
+    
+    # Redirects from old auth routes to allauth
+    path('login/', RedirectView.as_view(url='/accounts/login/', permanent=True), name='login_redirect'),
+    path('signup/', RedirectView.as_view(url='/accounts/signup/', permanent=True), name='signup_redirect'),
+    path('logout/', RedirectView.as_view(url='/accounts/logout/', permanent=True), name='logout_redirect'),
+    path('password_reset/', RedirectView.as_view(url='/accounts/password/reset/', permanent=True), name='password_reset_redirect'),
+    
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('', include('invitations.urls')),
     path('', include('agents.urls')),
+    path('', include('profiles.urls')),
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

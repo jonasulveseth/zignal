@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Custom Sign Up</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const emailField = document.getElementById("id_email");
+        const usernameField = document.getElementById("id_username");
+
+        if (emailField && usernameField) {
+          emailField.addEventListener("change", () => {
+            const emailValue = emailField.value || "";
+            if (emailValue) {
+              // Generate username from email
+              const username =
+                emailValue.split("@")[0] + Math.floor(Math.random() * 1000);
+              usernameField.value = username;
+              console.log("Generated username:", username);
+            }
+          });
+        }
+      });
+    </script>
+  </head>
+  <body class="bg-gray-50">
+    <div
+      class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
+    >
+      <div class="max-w-md w-full bg-white rounded-lg shadow-md p-8">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">
+          Create Your Account
+        </h1>
+
+        {% if messages %}
+        <div class="mb-4">
+          {% for message in messages %}
+          <div
+            class="{% if message.tags == 'success' %}bg-green-100 border-green-400 text-green-700{% else %}bg-red-100 border-red-400 text-red-700{% endif %} px-4 py-3 rounded mb-2"
+          >
+            {{ message }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %} {% if form.errors %}
+        <div
+          class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
+        >
+          <h3 class="font-bold">Please fix the following errors:</h3>
+          <ul class="list-disc pl-5">
+            {% for field in form %} {% if field.errors %}
+            <li>{{ field.label }}: {{ field.errors.0 }}</li>
+            {% endif %} {% endfor %} {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <form
+          method="POST"
+          action="{% url 'custom_signup' %}"
+          class="space-y-4"
+        >
+          {% csrf_token %}
+
+          <!-- We'll make username visible just for debugging -->
+          <div class="space-y-1">
+            <label
+              for="id_username"
+              class="block text-sm font-medium text-gray-700"
+              >Username (auto-generated)</label
+            >
+            <input
+              type="text"
+              name="username"
+              id="id_username"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              readonly
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label
+              for="id_email"
+              class="block text-sm font-medium text-gray-700"
+              >Email</label
+            >
+            <input
+              type="email"
+              name="email"
+              id="id_email"
+              placeholder="you@example.com"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              required
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label
+              for="id_password1"
+              class="block text-sm font-medium text-gray-700"
+              >Password</label
+            >
+            <input
+              type="password"
+              name="password1"
+              id="id_password1"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              required
+            />
+            <p class="text-xs text-gray-500">
+              Your password must contain at least 8 characters and can't be
+              entirely numeric.
+            </p>
+          </div>
+
+          <div class="space-y-1">
+            <label
+              for="id_password2"
+              class="block text-sm font-medium text-gray-700"
+              >Confirm Password</label
+            >
+            <input
+              type="password"
+              name="password2"
+              id="id_password2"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              required
+            />
+          </div>
+
+          {% if redirect_field_value %}
+          <input
+            type="hidden"
+            name="{{ redirect_field_name }}"
+            value="{{ redirect_field_value }}"
+          />
+          {% endif %}
+
+          <button
+            type="submit"
+            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Sign Up
+          </button>
+        </form>
+
+        <div class="mt-6 text-center">
+          <p class="text-sm text-gray-600">
+            Already have an account?
+            <a
+              href="{% url 'account_login' %}"
+              class="font-medium text-blue-600 hover:underline"
+            >
+              Sign in
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

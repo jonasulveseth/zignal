@@ -4,23 +4,26 @@
 - [x] Initialize Django project with PostgreSQL, Celery, and Redis
 - [x] Create User model (Custom with AbstractUser)
 - [x] Create a landing page design and layout structure
-- [ ] Create Company model
-- [ ] Create Project model
-- [ ] Create UserCompanyRelation and UserProjectRelation models
-- [ ] Create AIAgent model
-- [ ] Create DataSilo and DataFile models
-- [ ] Create Report model
-- [ ] Connect models via ForeignKey and ManyToMany relationships
-- [ ] Create migrations
-- [ ] Set up admin panel for testing
+- [x] Create Company model
+- [x] Create Project model
+- [x] Create UserCompanyRelation and UserProjectRelation models
+- [x] Create AIAgent model
+- [x] Create DataSilo and DataFile models
+- [x] Create Report model
+- [x] Connect models via ForeignKey and ManyToMany relationships
+- [x] Create migrations
+- [x] Set up admin panel for testing
 
 ## 🔐 PHASE 2: Authentication & Permissions
-- [ ] Implement email login with django-allauth or django-rest-auth
-- [ ] Create role-based permission system (admin/member per company/project)
-- [ ] Develop email invitation flow for companies/projects
-- [ ] Set up password reset functionality
-- [ ] Add session management
-- [ ] Create user profile views
+- [x] Implement email login with django-allauth or django-rest-auth
+- [x] Create role-based permission system (admin/member per company/project)
+- [x] Set up password reset functionality
+- [x] Add session management
+- [x] Develop email invitation flow for companies/projects
+- [x] Create user profile views
+- [x] Integrate Mailgun API for transactional emails
+- [x] Configure Heroku deployment with PostgreSQL and Redis add-ons
+- [x] Update deprecated django-allauth settings to new format
 
 ## 📂 PHASE 3: File Upload & Vector Storage
 - [ ] Implement file upload via frontend/API

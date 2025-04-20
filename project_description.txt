@@ -1,110 +1,70 @@
 🧱 FAS 1: Grundstruktur & modeller
 Mål: Skapa en stabil datamodell och användarhantering
-
 ✅ Uppgifter
- Initiera Django-projekt (med PostgreSQL + Celery + Redis)
-
- Skapa modeller enligt din struktur:
-
-User (Custom med AbstractUser)
-
-Company
-
-Project
-
-UserCompanyRelation, UserProjectRelation
-
-AIAgent
-
-DataSilo, DataFile
-
-Report
-
- Koppla modellerna via ForeignKey och ManyToMany med through
-
- Skapa migrations & adminpanel för test
+* Initiera Django-projekt (med PostgreSQL + Celery + Redis)
+* Skapa modeller enligt din struktur:
+    * User (Custom med AbstractUser)
+    * Company
+    * Project
+    * UserCompanyRelation, UserProjectRelation
+    * AIAgent
+    * DataSilo, DataFile
+    * Report
+* Koppla modellerna via ForeignKey och ManyToMany med through
+* Skapa migrations & adminpanel för test
 
 🔐 FAS 2: Autentisering & behörigheter
 Mål: Säker och flexibel användarhantering
-
 ✅ Uppgifter
- Använd django-allauth eller django-rest-auth för e-postinloggning
-
- Implementera rollbaserat behörighetssystem (admin/medlem per företag/projekt)
-
- Inbjudningsflöde via e-post till företag/projekt
+* Använd django-allauth eller django-rest-auth för e-postinloggning
+* Implementera rollbaserat behörighetssystem (admin/medlem per företag/projekt)
+* Inbjudningsflöde via e-post till företag/projekt
 
 📂 FAS 3: Filuppladdning & vektorlagring
 Mål: Lagring av företagsdokument för AI-analys
-
 ✅ Uppgifter
- Ladda upp filer via frontend/API
-
- Spara metadata i DataFile, och innehåll till DataSilo
-
- Anslut till vektorlagring (t.ex. Weaviate, Qdrant, Pinecone eller FAISS)
-
- Skapa pipeline för att extrahera och embedda innehåll (t.ex. via OpenAI/transformers)
+* Ladda upp filer via frontend/API
+* Spara metadata i DataFile, och innehåll till DataSilo
+* Anslut till vektorlagring (t.ex. Weaviate, Qdrant, Pinecone eller FAISS)
+* Skapa pipeline för att extrahera och embedda innehåll (t.ex. via OpenAI/transformers)
 
 🤖 FAS 4: AI-agent & OpenAI-integration
 Mål: Möjliggör kommunikation mellan användare och AI
-
 ✅ Uppgifter
- Skapa agent-modell per projekt
-
- Implementera wrapper mot OpenAI API
-
- Strömmat svar (via websockets eller sse)
-
- AI kan analysera dokument i dess DataSilo
+* Skapa agent-modell per projekt
+* Implementera wrapper mot OpenAI API
+* Strömmat svar (via websockets eller sse)
+* AI kan analysera dokument i dess DataSilo
 
 📊 FAS 5: Rapportmodul
 Mål: Möjliggör automatiserade AI-genererade rapporter
-
 ✅ Uppgifter
- Användare skapar rapportmallar med "kommandon"
-
- Systemet validerar att alla nödvändiga dokument finns
-
- AI svarar på rapporten och genererar sammanfattningar
-
- Spara rapporthistorik och associera med projekt/företag
+* Användare skapar rapportmallar med "kommandon"
+* Systemet validerar att alla nödvändiga dokument finns
+* AI svarar på rapporten och genererar sammanfattningar
+* Spara rapporthistorik och associera med projekt/företag
 
 💬 FAS 6: Kommunikation (chat, möten, e-post)
 Mål: Fyll på datakällor till AI automatiskt
-
 ✅ Uppgifter
- Implementera global AI-chat för portföljägaren (agent med access till flera företag)
-
- Koppla på mötesbot (via t.ex. Google Meet API + transkriptionsmodell)
-
- Ta emot e-post (t.ex. via Mailgun eller en webhook)
-
- Chat-minne kopplas till DataSilo
+* Implementera global AI-chat för portföljägaren (agent med access till flera företag)
+* Koppla på mötesbot (via t.ex. Google Meet API + transkriptionsmodell)
+* Ta emot e-post (t.ex. via Mailgun eller en webhook)
+* Chat-minne kopplas till DataSilo
 
 🌍 FAS 7: Frontend & Dashboard
 Mål: Intuitivt gränssnitt för båda rollerna
-
 ✅ Uppgifter
- Dashboard per roll (portföljägare vs företagsägare)
-
- Rapportöversikt, AI-chat, filhantering, rapportgenerator
-
- Möjlighet att skicka rapporter till externa mottagare
-
- Websocket för realtidsfeedback från AI
+* Dashboard per roll (portföljägare vs företagsägare)
+* Rapportöversikt, AI-chat, filhantering, rapportgenerator
+* Möjlighet att skicka rapporter till externa mottagare
+* Websocket för realtidsfeedback från AI
 
 🔒 FAS 8: Säkerhet & deployment
 Mål: Robust och GDPR-kompatibel tjänst
-
 ✅ Uppgifter
- OAuth2 / BankID / Azure AD support
-
- Celery tasks för AI-körningar & transkription
-
- Logging, audit trails, rättighetslogik
-
- Docker-compose setup + CI/CD
-
- Hosting på t.ex. Railway, Fly.io, Render eller AWS
-
+* OAuth2 / BankID / Azure AD support
+* Celery tasks för AI-körningar & transkription
+* Logging, audit trails, rättighetslogik
+* Docker-compose setup + CI/CD
+* Hosting på t.ex. Railway, Fly.io, Render eller AWS

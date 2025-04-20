@@ -1,0 +1,16 @@
+{% extends "layouts/base.html" %} {% load i18n %} {% load account %} {% load
+socialaccount %} {% block content %}
+<h1>Test Template</h1>
+
+<p>Testing socialaccount tags</p>
+
+{% get_providers as socialaccount_providers %} {% if socialaccount_providers %}
+<p>Social account providers: {{ socialaccount_providers|length }}</p>
+<ul>
+  {% for provider in socialaccount_providers %}
+  <li>{{ provider.name }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No social account providers configured.</p>
+{% endif %} {% endblock %}

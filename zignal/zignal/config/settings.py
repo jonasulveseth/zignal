@@ -42,20 +42,37 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+    
+    # Third party apps
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'anymail',
+    'rest_framework',
     
     # Local apps
     'users',
     'agents',
+    'companies',
+    'projects',
+    'datasilo',
+    'reports',
+    'invitations',
+    'profiles',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # For serving static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Add allauth middleware
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'zignal.config.urls'
@@ -72,6 +89,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'zignal.context_processors.settings_context',
             ],
         },
     },
@@ -93,6 +111,11 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
+
+# Support for Heroku PostgreSQL
+import dj_database_url
+db_from_env = dj_database_url.config(conn_max_age=600)
+DATABASES['default'].update(db_from_env)
 
 
 # Cache and Redis settings
@@ -118,6 +141,56 @@ CELERY_TIMEZONE = 'UTC'
 
 # Auth settings
 AUTH_USER_MODEL = 'users.User'
+
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    # Django default backend
+    'django.contrib.auth.backends.ModelBackend',
+    # django-allauth backend
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# django-allauth settings
+SITE_ID = 1
+
+# New django-allauth settings (recommended)
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*', 'username']
+
+# Legacy django-allauth settings (deprecated, kept for compatibility)
+ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Deprecated: Use ACCOUNT_LOGIN_METHODS instead
+ACCOUNT_EMAIL_REQUIRED = True  # Deprecated: Use ACCOUNT_SIGNUP_FIELDS instead
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = True  # Deprecated: Use ACCOUNT_SIGNUP_FIELDS instead
+ACCOUNT_USERNAME_BLACKLIST = ['admin', 'superuser']
+
+# Other django-allauth settings
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # Changed from 'mandatory' to 'none'
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_SESSION_REMEMBER = True
+ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
+
+# Login/Logout URLs
+LOGIN_URL = 'account_login'
+LOGIN_REDIRECT_URL = 'profiles:profile_view'
+LOGOUT_REDIRECT_URL = 'home'
+
+# Email settings - Development
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email settings - Production with Mailgun
+else:
+    EMAIL_BACKEND = 'anymail.backends.mailgun.EmailBackend'
+    ANYMAIL = {
+        "MAILGUN_API_KEY": os.getenv('MAILGUN_API_KEY', ''),
+        "MAILGUN_SENDER_DOMAIN": os.getenv('MAILGUN_DOMAIN', ''),
+        "MAILGUN_API_URL": os.getenv('MAILGUN_API_URL', 'https://api.mailgun.net/v3'),
+    }
+
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@zignal.com')
+SERVER_EMAIL = os.getenv('SERVER_EMAIL', 'server@zignal.com')
 
 
 # Password validation
@@ -163,6 +236,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Simplified static file serving for production
+# https://warehouse.python.org/project/whitenoise/
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

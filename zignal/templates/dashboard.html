@@ -1,0 +1,52 @@
+{% extends "layouts/base.html" %} {% block title %}Dashboard{% endblock %} {%
+block content %}
+<div class="container mx-auto px-4 py-8">
+  <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+    <h1 class="text-2xl font-bold mb-4">Welcome to Your Dashboard</h1>
+    <p class="mb-4">
+      Hello, {{ user.email }}! Your account has been created successfully.
+    </p>
+
+    <div class="border-t border-gray-200 pt-4 mt-4">
+      <h2 class="text-xl font-semibold mb-2">Getting Started</h2>
+      <ul class="list-disc pl-5 space-y-2">
+        <li>Complete your profile</li>
+        <li>Explore the platform</li>
+        <li>Connect with other users</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <h2 class="text-xl font-semibold mb-4">Your Companies</h2>
+      {% if user_companies %}
+      <ul class="space-y-2">
+        {% for company in user_companies %}
+        <li class="border-b border-gray-100 pb-2">
+          {{ company.company.name }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-gray-500">You don't have any companies yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <h2 class="text-xl font-semibold mb-4">Your Projects</h2>
+      {% if user_projects %}
+      <ul class="space-y-2">
+        {% for project in user_projects %}
+        <li class="border-b border-gray-100 pb-2">
+          {{ project.project.name }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-gray-500">You don't have any projects yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

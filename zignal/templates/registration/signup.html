@@ -1,0 +1,150 @@
+{% extends "layouts/base.html" %} {% load i18n %} {% load static %} {% block
+title %}{% trans "Sign Up" %} - Zignal{% endblock %} {% block content %}
+<div
+  class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50"
+>
+  <div class="max-w-md w-full space-y-8">
+    <div>
+      <h2 class="text-center text-3xl font-bold text-gray-800">
+        {% trans "Create your account" %}
+      </h2>
+      <p class="mt-2 text-center text-gray-600">
+        {% trans "Sign up to get started with Zignal" %}
+      </p>
+    </div>
+
+    {% if form.non_field_errors %}
+    <div class="auth-error">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg
+            class="h-5 w-5 text-red-400"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800">
+            {% for error in form.non_field_errors %} {{ error }} {% endfor %}
+          </h3>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="bg-white py-8 px-6 shadow rounded-xl">
+      <form class="space-y-6 auth-form" method="POST">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label
+            for="id_username"
+            class="block text-sm font-medium text-gray-700"
+          >
+            {% trans "Username" %}
+          </label>
+          <div class="mt-1">
+            <input
+              id="id_username"
+              name="username"
+              type="text"
+              autocomplete="username"
+              required
+              placeholder="{% trans 'Choose a username' %}"
+              class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm {% if form.username.errors %}border-red-500{% endif %}"
+            />
+            {% if form.username.errors %}
+            <p class="mt-2 text-sm text-red-600">
+              {% for error in form.username.errors %}{{ error }}{% endfor %}
+            </p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label
+            for="id_password1"
+            class="block text-sm font-medium text-gray-700"
+          >
+            {% trans "Password" %}
+          </label>
+          <div class="mt-1">
+            <input
+              id="id_password1"
+              name="password1"
+              type="password"
+              autocomplete="new-password"
+              required
+              placeholder="{% trans 'Create a password' %}"
+              class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm {% if form.password1.errors %}border-red-500{% endif %}"
+            />
+            {% if form.password1.errors %}
+            <p class="mt-2 text-sm text-red-600">
+              {% for error in form.password1.errors %}{{ error }}{% endfor %}
+            </p>
+            {% else %}
+            <p class="mt-2 text-xs text-gray-500">
+              {% trans "At least 8 characters, must not be a common password."
+              %}
+            </p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label
+            for="id_password2"
+            class="block text-sm font-medium text-gray-700"
+          >
+            {% trans "Confirm Password" %}
+          </label>
+          <div class="mt-1">
+            <input
+              id="id_password2"
+              name="password2"
+              type="password"
+              autocomplete="new-password"
+              required
+              placeholder="{% trans 'Confirm your password' %}"
+              class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm {% if form.password2.errors %}border-red-500{% endif %}"
+            />
+            {% if form.password2.errors %}
+            <p class="mt-2 text-sm text-red-600">
+              {% for error in form.password2.errors %}{{ error }}{% endfor %}
+            </p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            class="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 font-medium"
+          >
+            {% trans "Sign Up" %}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="auth-links text-center">
+      <p class="text-sm text-gray-600">
+        {% trans "Already have an account?" %}
+        <a
+          href="{% url 'login' %}"
+          class="font-medium text-blue-600 hover:text-blue-500"
+          >{% trans "Sign in" %}</a
+        >
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

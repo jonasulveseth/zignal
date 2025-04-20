@@ -28,24 +28,29 @@
     <div class="flex items-center gap-4">
       {% if user.is_authenticated %}
       <a
-        href="/mypage"
+        href="{% url 'chat' %}"
+        class="text-white bg-blue-500 hover:bg-blue-600 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 focus:outline-none"
+        >AI Chat</a
+      >
+      <a
+        href="{% url 'profiles:profile_view' %}"
         class="text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 sm:mr-2 dark:bg-purple-600 dark:hover:bg-purple-700 focus:outline-none dark:focus:ring-purple-800"
         >My Page</a
       >
       <a
-        href="/logout"
+        href="{% url 'account_logout' %}"
         class="text-gray-800 hover:text-purple-700 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 lg:mr-0"
         >Logout</a
       >
       {% else %}
       <a
-        href="/login"
+        href="{% url 'account_login' %}"
         class="hidden md:inline-flex px-4 py-2 text-sm border-2 border-blue-500 text-blue-500 bg-transparent hover:bg-blue-50 rounded-xl font-medium transition-all duration-300"
       >
         Log in
       </a>
       <a
-        href="/signup"
+        href="{% url 'account_signup' %}"
         class="px-4 py-2 text-sm bg-blue-500 text-white hover:shadow-lg hover:shadow-blue-200/30 rounded-xl font-medium transition-all duration-300"
       >
         Get Started
