@@ -1,0 +1,306 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ data_silo.name }} - Data Silo{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8">
+  <!-- Header with breadcrumbs and actions -->
+  <div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <nav class="flex mb-2" aria-label="Breadcrumb">
+          <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+              <a href="{% url 'datasilo:silo_list' %}" class="inline-flex items-center text-gray-500 hover:text-blue-600">
+                Data Silos
+              </a>
+            </li>
+            <li aria-current="page">
+              <div class="flex items-center">
+                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="ml-1 text-gray-500 font-medium">{{ data_silo.name }}</span>
+              </div>
+            </li>
+          </ol>
+        </nav>
+        <h1 class="text-3xl font-bold text-gray-800">{{ data_silo.name }}</h1>
+        <p class="text-gray-600 mt-1">
+          {% if data_silo.project %}
+          In project: <a href="{% url 'projects:detail' slug=data_silo.project.slug %}" class="text-blue-600 hover:underline">{{ data_silo.project.name }}</a>
+          {% else %}
+          In company: <a href="{% url 'companies:detail' slug=data_silo.company.slug %}" class="text-blue-600 hover:underline">{{ data_silo.company.name }}</a>
+          {% endif %}
+        </p>
+      </div>
+      <div class="flex mt-4 sm:mt-0 space-x-2">
+        <a href="{% url 'datasilo:file_upload' slug=data_silo.slug %}" 
+           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          Upload File
+        </a>
+        <div class="relative">
+          <button id="dropdown-button" 
+                 class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+            </svg>
+            Actions
+          </button>
+          <div id="dropdown-menu" class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+            <div class="py-1">
+              <a href="{% url 'datasilo:silo_edit' slug=data_silo.slug %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                Edit Silo
+              </a>
+              <a href="{% url 'datasilo:silo_delete' slug=data_silo.slug %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                Delete Silo
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Silo details and stats -->
+  <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div class="col-span-1 md:col-span-3">
+        <h2 class="text-xl font-semibold text-gray-800 mb-2">Description</h2>
+        <p class="text-gray-600">
+          {{ data_silo.description|default:"No description provided." }}
+        </p>
+      </div>
+      <div class="col-span-1 border-t md:border-t-0 md:border-l border-gray-200 pt-4 md:pt-0 md:pl-6">
+        <div class="space-y-3">
+          <div>
+            <p class="text-sm text-gray-500">Files</p>
+            <p class="text-xl font-semibold">{{ file_count }}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Total Size</p>
+            <p class="text-xl font-semibold">{{ total_size|filesizeformat }}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Created</p>
+            <p class="text-xl font-semibold">{{ data_silo.created_at|date:"M d, Y" }}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Created By</p>
+            <p class="text-xl font-semibold">{{ data_silo.created_by.get_full_name|default:data_silo.created_by.username }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Files list -->
+  <div>
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-2xl font-semibold text-gray-800">Files</h2>
+      <div class="flex space-x-2">
+        <div class="relative">
+          <input type="text" id="search-files" placeholder="Search files..." 
+                 class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+        </div>
+        <select id="file-type-filter" 
+                class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          <option value="">All Types</option>
+          <option value="document">Documents</option>
+          <option value="image">Images</option>
+          <option value="spreadsheet">Spreadsheets</option>
+          <option value="presentation">Presentations</option>
+          <option value="code">Code</option>
+          <option value="audio">Audio</option>
+          <option value="video">Video</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+
+    {% if files %}
+      <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200" id="files-table-body">
+            {% for file in files %}
+              <tr class="file-row" data-file-type="{{ file.file_type }}">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-gray-100 rounded-lg">
+                      {% if file.file_type == 'document' %}
+                        <svg class="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                      {% elif file.file_type == 'image' %}
+                        <svg class="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                      {% elif file.file_type == 'spreadsheet' %}
+                        <svg class="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                      {% else %}
+                        <svg class="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                      {% endif %}
+                    </div>
+                    <div class="ml-4">
+                      <a href="{% url 'datasilo:file_detail' file_id=file.id %}" class="text-sm font-medium text-gray-900 hover:text-blue-600">
+                        {{ file.name }}
+                      </a>
+                      <div class="text-sm text-gray-500 truncate max-w-md">{{ file.description|default:"" }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                    {{ file.get_file_type_display }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ file.size|filesizeformat }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ file.created_at|date:"M d, Y" }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  {% if file.status == 'pending' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      Pending
+                    </span>
+                  {% elif file.status == 'processing' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                      Processing
+                    </span>
+                  {% elif file.status == 'processed' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      Processed
+                    </span>
+                  {% elif file.status == 'failed' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                      Failed
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div class="flex justify-end space-x-2">
+                    <a href="{{ file.file.url }}" target="_blank" class="text-blue-600 hover:text-blue-900">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                      </svg>
+                    </a>
+                    <a href="{% url 'datasilo:file_detail' file_id=file.id %}" class="text-green-600 hover:text-green-900">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                      </svg>
+                    </a>
+                    <a href="{% url 'datasilo:file_delete' file_id=file.id %}" class="text-red-600 hover:text-red-900">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="bg-white shadow-md rounded-lg p-8 text-center">
+        <div class="mb-4">
+          <svg class="w-16 h-16 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-medium text-gray-700 mb-2">No Files Found</h3>
+        <p class="text-gray-500 mb-4">Upload your first file to start organizing your data.</p>
+        <a href="{% url 'datasilo:file_upload' slug=data_silo.slug %}" 
+           class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          Upload File
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% block javascript %}
+<script>
+  // Dropdown toggle
+  document.addEventListener('DOMContentLoaded', function() {
+    const dropdownButton = document.getElementById('dropdown-button');
+    const dropdownMenu = document.getElementById('dropdown-menu');
+    
+    if (dropdownButton && dropdownMenu) {
+      dropdownButton.addEventListener('click', function() {
+        dropdownMenu.classList.toggle('hidden');
+      });
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+        if (!dropdownButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
+          dropdownMenu.classList.add('hidden');
+        }
+      });
+    }
+    
+    // File search and filtering
+    const searchInput = document.getElementById('search-files');
+    const fileTypeFilter = document.getElementById('file-type-filter');
+    const fileRows = document.querySelectorAll('.file-row');
+    
+    function filterFiles() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const fileType = fileTypeFilter.value;
+      
+      fileRows.forEach(row => {
+        const fileName = row.querySelector('a').textContent.toLowerCase();
+        const rowFileType = row.dataset.fileType;
+        
+        const matchesSearch = fileName.includes(searchTerm);
+        const matchesType = fileType === '' || rowFileType === fileType;
+        
+        if (matchesSearch && matchesType) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+    
+    if (searchInput) {
+      searchInput.addEventListener('input', filterFiles);
+    }
+    
+    if (fileTypeFilter) {
+      fileTypeFilter.addEventListener('change', filterFiles);
+    }
+  });
+</script>
+{% endblock %}
+{% endblock %} 

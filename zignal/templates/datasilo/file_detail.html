@@ -1,0 +1,298 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ file.name }} - File Details{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8">
+  <!-- Header with breadcrumbs and actions -->
+  <div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <nav class="flex mb-2" aria-label="Breadcrumb">
+          <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+              <a href="{% url 'datasilo:silo_list' %}" class="inline-flex items-center text-gray-500 hover:text-blue-600">
+                Data Silos
+              </a>
+            </li>
+            <li>
+              <div class="flex items-center">
+                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                <a href="{% url 'datasilo:silo_detail' slug=file.data_silo.slug %}" class="ml-1 text-gray-500 hover:text-blue-600">
+                  {{ file.data_silo.name }}
+                </a>
+              </div>
+            </li>
+            <li aria-current="page">
+              <div class="flex items-center">
+                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="ml-1 text-gray-500 font-medium">{{ file.name }}</span>
+              </div>
+            </li>
+          </ol>
+        </nav>
+        <h1 class="text-3xl font-bold text-gray-800 truncate max-w-2xl">{{ file.name }}</h1>
+        <p class="text-gray-600 mt-1">
+          In silo: <a href="{% url 'datasilo:silo_detail' slug=file.data_silo.slug %}" class="text-blue-600 hover:underline">{{ file.data_silo.name }}</a>
+        </p>
+      </div>
+      <div class="flex mt-4 sm:mt-0 space-x-2">
+        <a href="{{ file.file.url }}" target="_blank" 
+           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Download
+        </a>
+        <div class="relative">
+          <button id="dropdown-button" 
+                 class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+            </svg>
+            Actions
+          </button>
+          <div id="dropdown-menu" class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+            <div class="py-1">
+              <a href="{% url 'datasilo:file_edit' file_id=file.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                Edit File Info
+              </a>
+              <a href="{% url 'datasilo:file_delete' file_id=file.id %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                Delete File
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- File details card -->
+    <div class="col-span-1 lg:col-span-1">
+      <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div class="px-6 py-5 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-800">File Details</h2>
+        </div>
+        <div class="px-6 py-5">
+          <div class="space-y-4">
+            <!-- File preview -->
+            <div class="flex items-center justify-center bg-gray-100 rounded-lg p-4 mb-4 h-48">
+              {% if file.file_type == 'image' %}
+                <img src="{{ file.file.url }}" alt="{{ file.name }}" class="max-h-full max-w-full object-contain">
+              {% elif file.file_type == 'document' %}
+                <svg class="h-24 w-24 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              {% elif file.file_type == 'spreadsheet' %}
+                <svg class="h-24 w-24 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+              {% elif file.file_type == 'presentation' %}
+                <svg class="h-24 w-24 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4v16h16V4z"></path>
+                </svg>
+              {% elif file.file_type == 'audio' %}
+                <svg class="h-24 w-24 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                </svg>
+              {% elif file.file_type == 'video' %}
+                <svg class="h-24 w-24 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+              {% elif file.file_type == 'code' %}
+                <svg class="h-24 w-24 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                </svg>
+              {% else %}
+                <svg class="h-24 w-24 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+              {% endif %}
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-500">Type</p>
+                <p class="font-semibold">{{ file.get_file_type_display }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Size</p>
+                <p class="font-semibold">{{ file.size|filesizeformat }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Status</p>
+                <div>
+                  {% if file.status == 'pending' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      Pending
+                    </span>
+                  {% elif file.status == 'processing' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                      Processing
+                    </span>
+                  {% elif file.status == 'processed' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      Processed
+                    </span>
+                  {% elif file.status == 'failed' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                      Failed
+                    </span>
+                  {% endif %}
+                </div>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Upload Date</p>
+                <p class="font-semibold">{{ file.created_at|date:"M d, Y" }}</p>
+              </div>
+            </div>
+
+            <div>
+              <p class="text-sm text-gray-500">Uploaded By</p>
+              <p class="font-semibold">{{ file.created_by.get_full_name|default:file.created_by.username }}</p>
+            </div>
+            
+            {% if file.mime_type %}
+            <div>
+              <p class="text-sm text-gray-500">MIME Type</p>
+              <p class="font-semibold">{{ file.mime_type }}</p>
+            </div>
+            {% endif %}
+            
+            {% if file.extension %}
+            <div>
+              <p class="text-sm text-gray-500">Extension</p>
+              <p class="font-semibold">{{ file.extension }}</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- File content and metadata -->
+    <div class="col-span-1 lg:col-span-2">
+      <!-- Description -->
+      <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div class="px-6 py-5 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-800">Description</h2>
+        </div>
+        <div class="px-6 py-5">
+          {% if file.description %}
+            <p class="text-gray-700">{{ file.description }}</p>
+          {% else %}
+            <p class="text-gray-500 italic">No description provided.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- File preview section -->
+      <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div class="px-6 py-5 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-800">Preview</h2>
+        </div>
+        <div class="px-6 py-5">
+          {% if file.file_type == 'image' %}
+            <img src="{{ file.file.url }}" alt="{{ file.name }}" class="max-w-full h-auto rounded">
+          {% elif file.file_type == 'video' %}
+            <video controls class="w-full h-auto">
+              <source src="{{ file.file.url }}" type="{{ file.mime_type|default:'video/mp4' }}">
+              Your browser does not support the video tag.
+            </video>
+          {% elif file.file_type == 'audio' %}
+            <audio controls class="w-full">
+              <source src="{{ file.file.url }}" type="{{ file.mime_type|default:'audio/mpeg' }}">
+              Your browser does not support the audio tag.
+            </audio>
+          {% elif file.file_type == 'document' or file.file_type == 'spreadsheet' or file.file_type == 'presentation' %}
+            <div class="bg-gray-100 rounded-lg p-8 text-center">
+              <p class="text-gray-600 mb-6">Preview not available for this file type.</p>
+              <a href="{{ file.file.url }}" target="_blank" 
+                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                </svg>
+                Open in new tab
+              </a>
+            </div>
+          {% else %}
+            <div class="bg-gray-100 rounded-lg p-8 text-center">
+              <p class="text-gray-600 mb-6">Preview not available for this file type.</p>
+              <a href="{{ file.file.url }}" target="_blank" 
+                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                </svg>
+                Open in new tab
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if file.metadata %}
+      <!-- Metadata section -->
+      <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-800">Metadata</h2>
+        </div>
+        <div class="px-6 py-5">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                {% for key, value in file.metadata.items %}
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ key }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ value }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic" colspan="2">No metadata available.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% block javascript %}
+<script>
+  // Dropdown toggle
+  document.addEventListener('DOMContentLoaded', function() {
+    const dropdownButton = document.getElementById('dropdown-button');
+    const dropdownMenu = document.getElementById('dropdown-menu');
+    
+    if (dropdownButton && dropdownMenu) {
+      dropdownButton.addEventListener('click', function() {
+        dropdownMenu.classList.toggle('hidden');
+      });
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+        if (!dropdownButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
+          dropdownMenu.classList.add('hidden');
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}
+{% endblock %} 
