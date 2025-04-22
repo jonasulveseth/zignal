@@ -1,0 +1,131 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Test Project Creation | Zignal{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Test Project Creation</h1>
+      <p class="mt-1 text-sm text-gray-500">
+        This is a simple test form for project creation.
+      </p>
+    </div>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-md p-6">
+      <form action="{% url 'test_project_creation' %}" method="POST" id="test-project-form">
+        {% csrf_token %}
+        <div class="space-y-6">
+          <div>
+            <label for="project-name" class="block text-sm font-medium text-gray-700">Project Name</label>
+            <div class="mt-1">
+              <input type="text" name="name" id="project-name" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="Enter project name" required>
+            </div>
+          </div>
+          <div>
+            <label for="project-description" class="block text-sm font-medium text-gray-700">Description</label>
+            <div class="mt-1">
+              <textarea id="project-description" name="description" rows="4" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="Enter project description"></textarea>
+            </div>
+          </div>
+          <div>
+            <label for="project-status" class="block text-sm font-medium text-gray-700">Status</label>
+            <div class="mt-1">
+              <select id="project-status" name="status" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+                <option value="completed">Completed</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="project-start-date" class="block text-sm font-medium text-gray-700">Start Date</label>
+              <div class="mt-1">
+                <input type="date" name="start_date" id="project-start-date" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+              </div>
+            </div>
+            <div>
+              <label for="project-end-date" class="block text-sm font-medium text-gray-700">End Date</label>
+              <div class="mt-1">
+                <input type="date" name="end_date" id="project-end-date" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+              </div>
+            </div>
+          </div>
+          <div class="pt-5">
+            <div class="flex justify-end">
+              <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" onclick="window.location.href='{% url 'dashboard' %}'">
+                Cancel
+              </button>
+              <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Create Project
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% if messages %}
+<div class="fixed inset-0 flex items-end justify-center px-4 py-6 pointer-events-none sm:p-6 sm:items-start sm:justify-end z-50">
+  {% for message in messages %}
+  <div class="max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden transition-all transform translate-y-0 opacity-100 {% if message.tags %}{{ message.tags }}{% endif %}">
+    <div class="p-4">
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+          <svg class="h-6 w-6 text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {% else %}
+          <svg class="h-6 w-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {% endif %}
+        </div>
+        <div class="ml-3 w-0 flex-1 pt-0.5">
+          <p class="text-sm font-medium text-gray-900">
+            {{ message }}
+          </p>
+        </div>
+        <div class="ml-4 flex-shrink-0 flex">
+          <button class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="this.parentElement.parentElement.parentElement.parentElement.remove()">
+            <span class="sr-only">Close</span>
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<script>
+  // Add event listener for form submission
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('test-project-form');
+    if (form) {
+      form.addEventListener('submit', function(event) {
+        console.log('Test form is being submitted');
+        
+        // Log form data
+        const formData = new FormData(form);
+        console.log('Form data:');
+        for (let [key, value] of formData.entries()) {
+          console.log(`${key}: ${value}`);
+        }
+      });
+    } else {
+      console.error('Test form element not found');
+    }
+  });
+</script>
+{% endblock %} 

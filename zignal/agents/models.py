@@ -84,3 +84,85 @@ class Message(models.Model):
     
     class Meta:
         ordering = ['timestamp']
+
+
+class MeetingTranscript(models.Model):
+    """
+    A transcript from a meeting via Meeting BaaS
+    """
+    MEETING_PLATFORM_CHOICES = (
+        ('zoom', 'Zoom'),
+        ('teams', 'Microsoft Teams'),
+        ('google_meet', 'Google Meet'),
+    )
+    
+    STATUS_CHOICES = (
+        ('scheduled', 'Scheduled'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    )
+    
+    meeting_id = models.CharField(max_length=255, unique=True)
+    external_meeting_id = models.CharField(max_length=255, blank=True, null=True)
+    meeting_title = models.CharField(max_length=255)
+    platform = models.CharField(max_length=20, choices=MEETING_PLATFORM_CHOICES)
+    meeting_url = models.URLField(max_length=1000)
+    scheduled_time = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    
+    transcript_raw = models.TextField(blank=True, null=True)
+    transcript_summary = models.TextField(blank=True, null=True)
+    
+    transcript_file = models.FileField(upload_to='meeting_transcripts/', blank=True, null=True)
+    recording_url = models.URLField(max_length=1000, blank=True, null=True)
+    
+    duration_minutes = models.IntegerField(blank=True, null=True)
+    
+    # Allow connecting to project or company
+    project = models.ForeignKey(
+        'projects.Project', 
+        on_delete=models.SET_NULL,
+        related_name='meeting_transcripts',
+        null=True,
+        blank=True
+    )
+    company = models.ForeignKey(
+        'companies.Company',
+        on_delete=models.SET_NULL,
+        related_name='meeting_transcripts',
+        null=True,
+        blank=True
+    )
+    
+    # User who scheduled the meeting
+    scheduled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='scheduled_meetings',
+        null=True
+    )
+    
+    # Fields for Meeting BaaS integration
+    meetingbaas_bot_id = models.CharField(max_length=255, blank=True, null=True)
+    meetingbaas_webhook_id = models.CharField(max_length=255, blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Create conversation for this meeting
+    conversation = models.OneToOneField(
+        Conversation,
+        on_delete=models.SET_NULL,
+        related_name='meeting_transcript',
+        null=True,
+        blank=True
+    )
+    
+    class Meta:
+        ordering = ['-scheduled_time']
+        verbose_name = "Meeting Transcript"
+        verbose_name_plural = "Meeting Transcripts"
+    
+    def __str__(self):
+        return f"{self.meeting_title} ({self.get_platform_display()}) - {self.get_status_display()}"

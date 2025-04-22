@@ -27,11 +27,61 @@
 
     <div class="flex items-center gap-4">
       {% if user.is_authenticated %}
+      <!-- Notifications Dropdown -->
+      <div class="relative">
+        <button
+          id="notification-button"
+          class="relative p-2 text-gray-500 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
+          aria-expanded="false"
+          aria-haspopup="true"
+        >
+          <span class="sr-only">Notifications</span>
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <span class="notification-badge">0</span>
+        </button>
+        
+        <!-- Notification Dropdown Menu -->
+        <div
+          id="notification-container"
+          class="notification-container absolute right-0 mt-2 origin-top-right hidden"
+          role="menu"
+          aria-orientation="vertical"
+          aria-labelledby="notification-button"
+        >
+          <div class="notification-header">
+            <h3>Notifications</h3>
+            <div class="notification-actions">
+              <button id="mark-all-read-btn" type="button">Mark all as read</button>
+            </div>
+          </div>
+          <div class="notification-list-container">
+            <ul id="notification-list" class="notification-list">
+              <!-- Notifications will be populated here -->
+              <li class="notification-empty">No notifications</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
       <a
         href="{% url 'chat' %}"
         class="text-white bg-blue-500 hover:bg-blue-600 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 focus:outline-none"
         >AI Chat</a
       >
+      {% if user.user_type == 'portfolio_manager' %}
+      <a
+        href="{% url 'portfolio_manager_chat' %}"
+        class="text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 focus:outline-none"
+        >Portfolio Chat</a
+      >
+      <a
+        href="{% url 'agents:meeting_list' %}"
+        class="text-gray-600 hover:text-gray-900 py-2 rounded-md font-medium"
+        >Meetings</a
+      >
+      {% endif %}
       <a
         href="{% url 'profiles:profile_view' %}"
         class="text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 sm:mr-2 dark:bg-purple-600 dark:hover:bg-purple-700 focus:outline-none dark:focus:ring-purple-800"
@@ -59,3 +109,45 @@
     </div>
   </div>
 </nav>
+
+<!-- Notification Toggle Script -->
+{% if user.is_authenticated %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const button = document.getElementById('notification-button');
+    const container = document.getElementById('notification-container');
+    
+    if (button && container) {
+      // Close function for reuse
+      function closeNotificationMenu() {
+        container.classList.add('hidden');
+        button.setAttribute('aria-expanded', 'false');
+      }
+      
+      button.addEventListener('click', function(event) {
+        event.stopPropagation(); // Prevent this click from triggering document click
+        container.classList.toggle('hidden');
+        button.setAttribute(
+          'aria-expanded', 
+          button.getAttribute('aria-expanded') === 'true' ? 'false' : 'true'
+        );
+      });
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', function(event) {
+        // Check if click was outside both the button and container
+        if (container && !container.contains(event.target) && !button.contains(event.target)) {
+          closeNotificationMenu();
+        }
+      });
+      
+      // Add ESC key listener to close the menu
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !container.classList.contains('hidden')) {
+          closeNotificationMenu();
+        }
+      });
+    }
+  });
+</script>
+{% endif %}

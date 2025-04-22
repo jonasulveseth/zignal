@@ -1,0 +1,207 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Portfolio Dashboard | Zignal{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Portfolio Dashboard</h1>
+      <p class="mt-1 text-sm text-gray-500">
+        Welcome back, {{ user.get_full_name|default:user.email }}
+        <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+          {{ user.user_type|title }}
+        </span>
+        <a href="{% url 'toggle_user_type' %}" class="ml-2 text-xs text-blue-600 hover:underline">
+          Toggle user type for testing
+        </a>
+      </p>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2 mb-8">
+      <!-- Companies Card -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
+              <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">
+                  Companies
+                </dt>
+                <dd>
+                  <div class="text-lg font-medium text-gray-900">
+                    {{ company_count }}
+                  </div>
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-4 sm:px-6">
+          <div class="text-sm">
+            <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
+              View all companies
+              <span class="sr-only">Companies</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Chat Card -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
+              <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">
+                  Portfolio Chat
+                </dt>
+                <dd>
+                  <div class="text-lg font-medium text-gray-900">
+                    Global AI Assistant
+                  </div>
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-4 sm:px-6">
+          <div class="text-sm">
+            <a href="{% url 'portfolio_manager_chat' %}" class="font-medium text-blue-600 hover:text-blue-500">
+              Start chatting
+              <span class="sr-only">Portfolio Chat</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Companies List -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md mb-8">
+      <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Companies
+        </h3>
+      </div>
+      <ul role="list" class="divide-y divide-gray-200">
+        {% if companies %}
+          {% for company in companies %}
+            <li>
+              <a href="#" class="block hover:bg-gray-50">
+                <div class="px-4 py-4 sm:px-6">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-blue-600 truncate">
+                      {{ company.name }}
+                    </p>
+                    <div class="ml-2 flex-shrink-0 flex">
+                      <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        Active
+                      </p>
+                    </div>
+                  </div>
+                  <div class="mt-2 sm:flex sm:justify-between">
+                    <div class="sm:flex">
+                      <p class="flex items-center text-sm text-gray-500">
+                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                        {{ company.user_relations.count }} Members
+                      </p>
+                      {% if company.website %}
+                      <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M6.672 1.911a1 1 0 10-1.932.518l.259.966a1 1 0 001.932-.518l-.26-.966zM2.429 4.74a1 1 0 10-.517 1.932l.966.259a1 1 0 00.517-1.932l-.966-.26zm8.814-.569a1 1 0 00-1.415-1.414l-.707.707a1 1 0 101.415 1.415l.707-.708zm-7.071 7.072l.707-.707A1 1 0 003.465 9.12l-.708.707a1 1 0 001.415 1.415zm3.2-5.171a1 1 0 00-1.3 1.3l4 10a1 1 0 001.823.075l1.38-2.759 3.018 3.02a1 1 0 001.414-1.415l-3.019-3.02 2.76-1.379a1 1 0 00-.076-1.822l-10-4z" clip-rule="evenodd" />
+                        </svg>
+                        <a href="{{ company.website }}" target="_blank" class="text-blue-600 hover:underline">
+                          {{ company.website }}
+                        </a>
+                      </p>
+                      {% endif %}
+                    </div>
+                    <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                      <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                      </svg>
+                      <p>
+                        Joined on <time datetime="{{ company.created_at|date:'Y-m-d' }}">{{ company.created_at|date:"F j, Y" }}</time>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </li>
+          {% endfor %}
+        {% else %}
+          <li class="px-4 py-5 sm:px-6 text-center text-gray-500">
+            No companies available yet
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+      <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Recent Activities
+        </h3>
+      </div>
+      <ul role="list" class="divide-y divide-gray-200">
+        {% if recent_activities %}
+          {% for activity in recent_activities %}
+            <li>
+              <div class="px-4 py-4 sm:px-6">
+                <div class="flex items-center">
+                  <div class="min-w-0 flex-1 flex items-center">
+                    <div class="flex-shrink-0">
+                      {% if activity.user.profile_picture %}
+                        <img class="h-12 w-12 rounded-full" src="{{ activity.user.profile_picture.url }}" alt="{{ activity.user.username }}">
+                      {% else %}
+                        <div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span class="text-gray-500 text-lg font-medium">{{ activity.user.username|first|upper }}</span>
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="min-w-0 flex-1 px-4">
+                      <div>
+                        <p class="text-sm font-medium text-gray-900 truncate">
+                          {{ activity.description }}
+                        </p>
+                        <p class="mt-1 text-sm text-gray-500">
+                          {{ activity.user.get_full_name|default:activity.user.username }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500">
+                      {{ activity.created_at|timesince }} ago
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </li>
+          {% endfor %}
+        {% else %}
+          <li class="px-4 py-5 sm:px-6 text-center text-gray-500">
+            No recent activities
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %} 

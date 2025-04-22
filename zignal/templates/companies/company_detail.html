@@ -1,0 +1,136 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ company.name }} | Zignal{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="flex items-center">
+            <a href="{% url 'company_list' %}" class="mr-2 text-blue-600 hover:text-blue-500">
+              <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+            </a>
+            <h1 class="text-3xl font-bold text-gray-900">{{ company.name }}</h1>
+          </div>
+          <p class="mt-1 text-sm text-gray-500">
+            Company details and management.
+          </p>
+        </div>
+        <div>
+          <a href="{% url 'dashboard' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            Go to Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Company Information
+        </h3>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+          Details and properties.
+        </p>
+      </div>
+      <div class="border-t border-gray-200">
+        <dl>
+          <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">
+              Company name
+            </dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+              {{ company.name }}
+            </dd>
+          </div>
+          <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">
+              Description
+            </dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+              {{ company.description|default:"No description" }}
+            </dd>
+          </div>
+          <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">
+              Created by
+            </dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+              {{ company.created_by.get_full_name|default:company.created_by.email }}
+            </dd>
+          </div>
+          <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">
+              Created at
+            </dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+              {{ company.created_at|date:"F j, Y, g:i a" }}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
+      <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Projects
+        </h3>
+      </div>
+      <ul role="list" class="divide-y divide-gray-200">
+        {% with projects=company.project_set.all %}
+          {% if projects %}
+            {% for project in projects %}
+              <li>
+                <div class="block hover:bg-gray-50">
+                  <div class="px-4 py-4 sm:px-6">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-medium text-blue-600 truncate">
+                        {{ project.name }}
+                      </p>
+                      <div class="ml-2 flex-shrink-0 flex">
+                        <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {{ project.status|default:"Active"|title }}
+                        </p>
+                      </div>
+                    </div>
+                    <div class="mt-2 sm:flex sm:justify-between">
+                      <div class="sm:flex">
+                        <p class="flex items-center text-sm text-gray-500">
+                          <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm8 8v-4H5v4h10z" clip-rule="evenodd" />
+                          </svg>
+                          {{ project.description|truncatewords:10|default:"No description" }}
+                        </p>
+                      </div>
+                      <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                        </svg>
+                        <p>
+                          Created on <time datetime="{{ project.created_at|date:'Y-m-d' }}">{{ project.created_at|date:"F j, Y" }}</time>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            {% endfor %}
+          {% else %}
+            <li class="px-4 py-5 sm:px-6 text-center text-gray-500">
+              No projects available yet. 
+              <a href="#" class="text-blue-600 hover:text-blue-500">Create a project</a>
+            </li>
+          {% endif %}
+        {% endwith %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %} 

@@ -81,13 +81,9 @@ class DataFile(models.Model):
     Model representing a file stored in a data silo
     """
     FILE_TYPE_CHOICES = (
-        ('document', 'Document'),
-        ('image', 'Image'),
-        ('spreadsheet', 'Spreadsheet'),
-        ('presentation', 'Presentation'),
-        ('code', 'Code'),
-        ('audio', 'Audio'),
-        ('video', 'Video'),
+        ('document', 'Document (PDF, DOC, DOCX, TXT)'),
+        ('spreadsheet', 'Spreadsheet (XLS, XLSX, CSV)'),
+        ('json', 'JSON'),
         ('other', 'Other'),
     )
     

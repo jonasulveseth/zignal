@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django.contrib.humanize',
     
     # Third party apps
     'allauth',
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'anymail',
     'rest_framework',
+    'channels',
     
     # Local apps
     'users',
@@ -60,6 +62,9 @@ INSTALLED_APPS = [
     'reports',
     'invitations',
     'profiles',
+    'mail_receiver',
+    'notifications',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -138,6 +143,9 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
+# Email processing settings
+PROCESS_EMAILS_SYNC = os.getenv('PROCESS_EMAILS_SYNC', 'False') == 'True'
+
 
 # Auth settings
 AUTH_USER_MODEL = 'users.User'
@@ -163,6 +171,18 @@ ACCOUNT_EMAIL_REQUIRED = True  # Deprecated: Use ACCOUNT_SIGNUP_FIELDS instead
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = True  # Deprecated: Use ACCOUNT_SIGNUP_FIELDS instead
 ACCOUNT_USERNAME_BLACKLIST = ['admin', 'superuser']
+
+# Additional allauth settings to help with signup issues
+ACCOUNT_USERNAME_MIN_LENGTH = 1
+ACCOUNT_DEBUG = True  # Enable debugging
+
+# Prevent form resubmission issues
+ACCOUNT_FORMS = {
+    'signup': 'allauth.account.forms.SignupForm',
+}
+
+# Use custom adapter for better username handling
+ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
 
 # Other django-allauth settings
 ACCOUNT_EMAIL_VERIFICATION = 'none'  # Changed from 'mandatory' to 'none'
@@ -249,4 +269,37 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # OpenAI API settings
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o')
-OPENAI_EMBEDDINGS_MODEL = os.getenv('OPENAI_EMBEDDINGS_MODEL', 'text-embedding-3-small')
+OPENAI_EMBEDDINGS_MODEL = os.getenv('OPENAI_EMBEDDINGS_MODEL', 'text-embedding-ada-002')
+
+# Meeting BaaS API Configuration
+MEETINGBAAS_API_KEY = os.getenv('MEETINGBAAS_API_KEY', '')
+MEETINGBAAS_API_URL = os.getenv('MEETINGBAAS_API_URL', 'https://api.meetingbaas.com/v1')
+GENERATE_MEETING_SUMMARIES = os.getenv('GENERATE_MEETING_SUMMARIES', 'True') == 'True'
+
+# Host URL for webhooks in production
+HOST_URL = os.getenv('HOST_URL', 'http://localhost:8000')
+if DEBUG:
+    # For local development with ngrok
+    NGROK_URL = os.getenv('NGROK_URL', '')
+    if NGROK_URL:
+        HOST_URL = NGROK_URL
+
+# Channels configuration for WebSockets
+ASGI_APPLICATION = 'zignal.routing.application'
+
+# Channel Layers
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [os.getenv('REDIS_URL', 'redis://localhost:6379/3')],
+        },
+    },
+}
+
+# Notification settings
+NOTIFICATION_SOUND_ENABLED = os.getenv('NOTIFICATION_SOUND_ENABLED', 'True') == 'True'
+NOTIFICATION_VIBRATION_ENABLED = os.getenv('NOTIFICATION_VIBRATION_ENABLED', 'True') == 'True'
+
+# Email domain for mail receiver
+EMAIL_DOMAIN = os.getenv('EMAIL_DOMAIN', 'zignal.se')

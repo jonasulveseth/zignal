@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Agent, Conversation, Message
+from .models import Agent, Conversation, Message, MeetingTranscript
 
 @admin.register(Agent)
 class AgentAdmin(admin.ModelAdmin):
@@ -23,8 +23,14 @@ class AgentAdmin(admin.ModelAdmin):
 class MessageInline(admin.TabularInline):
     model = Message
     extra = 0
-    readonly_fields = ('timestamp',)
-    fields = ('role', 'content', 'timestamp')
+    fields = ('role', 'content_preview', 'timestamp')
+    readonly_fields = ('role', 'content_preview', 'timestamp')
+    can_delete = False
+    max_num = 20
+    
+    def content_preview(self, obj):
+        return obj.content[:100] + "..." if len(obj.content) > 100 else obj.content
+    content_preview.short_description = 'Content'
 
 
 @admin.register(Conversation)
@@ -54,3 +60,29 @@ class MessageAdmin(admin.ModelAdmin):
     def content_preview(self, obj):
         return obj.content[:100] + "..." if len(obj.content) > 100 else obj.content
     content_preview.short_description = 'Content'
+
+
+@admin.register(MeetingTranscript)
+class MeetingTranscriptAdmin(admin.ModelAdmin):
+    list_display = ('meeting_title', 'platform', 'scheduled_time', 'status', 'scheduled_by')
+    list_filter = ('platform', 'status', 'scheduled_time')
+    search_fields = ('meeting_title', 'transcript_raw', 'scheduled_by__username')
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        ('Meeting Information', {
+            'fields': ('meeting_id', 'external_meeting_id', 'meeting_title', 'platform', 'meeting_url', 
+                      'scheduled_time', 'status', 'duration_minutes')
+        }),
+        ('Transcript', {
+            'fields': ('transcript_raw', 'transcript_summary', 'transcript_file', 'recording_url')
+        }),
+        ('Relations', {
+            'fields': ('project', 'company', 'scheduled_by', 'conversation')
+        }),
+        ('Meeting BaaS', {
+            'fields': ('meetingbaas_bot_id', 'meetingbaas_webhook_id')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )

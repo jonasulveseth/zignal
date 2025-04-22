@@ -1,0 +1,261 @@
+{% extends "layouts/base.html" %}
+{% block title %}Portfolio Global Chat{% endblock %}
+{% block content %}
+<section class="py-10">
+  <div class="max-w-5xl mx-auto px-4">
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <h1 class="text-3xl font-bold mb-2 text-blue-600">Portfolio Global AI Chat</h1>
+      <p class="text-gray-600 mb-4">
+        Connect with your AI assistant to get insights across your entire portfolio of companies and projects.
+      </p>
+      
+      {% if user.user_type != 'portfolio_manager' %}
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <p class="text-yellow-700">
+            This feature is only available to Portfolio Managers. Please contact your administrator if you need access.
+          </p>
+        </div>
+      {% endif %}
+      
+      {% csrf_token %}
+      
+      <div id="chat-container" class="bg-gray-50 rounded-lg p-4 mb-4 min-h-[500px] max-h-[600px] overflow-y-auto">
+        <div id="messages" class="space-y-4">
+          <div class="p-2 text-sm text-gray-500 italic text-center">
+            Loading your portfolio conversation...
+          </div>
+        </div>
+      </div>
+      
+      <div id="chat-input-container" class="flex items-center space-x-2">
+        <input
+          type="text"
+          id="message-input"
+          class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Ask a question about your portfolio..."
+        />
+        <button
+          id="send-message"
+          class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-lg p-6">
+      <h2 class="text-xl font-semibold mb-4">How to Use Portfolio Chat</h2>
+      <div class="space-y-3">
+        <div class="flex items-start">
+          <div class="flex-shrink-0 h-6 w-6 text-blue-600">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+          <p class="ml-3 text-gray-700">Ask about trends across multiple projects</p>
+        </div>
+        <div class="flex items-start">
+          <div class="flex-shrink-0 h-6 w-6 text-blue-600">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+          <p class="ml-3 text-gray-700">Compare performance between different companies</p>
+        </div>
+        <div class="flex items-start">
+          <div class="flex-shrink-0 h-6 w-6 text-blue-600">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+          <p class="ml-3 text-gray-700">Get strategic advice for portfolio management</p>
+        </div>
+        <div class="flex items-start">
+          <div class="flex-shrink-0 h-6 w-6 text-blue-600">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+          <p class="ml-3 text-gray-700">For document-specific questions, use the project-specific chat</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // DOM elements
+    const chatContainer = document.getElementById("chat-container");
+    const messages = document.getElementById("messages");
+    const messageInput = document.getElementById("message-input");
+    const sendMessageBtn = document.getElementById("send-message");
+
+    // Variables
+    let currentConversationId = null;
+
+    // Get a portfolio conversation
+    const getPortfolioConversation = async () => {
+      try {
+        const response = await fetch("/api/portfolio/conversation/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrfToken(),
+          }
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          currentConversationId = data.id;
+          loadMessages(currentConversationId);
+        } else {
+          addMessage("system", `Error: ${data.error || "Could not create conversation"}`);
+        }
+      } catch (error) {
+        console.error("Error creating portfolio conversation:", error);
+        addMessage("system", "Error connecting to the server. Please try again later.");
+      }
+    };
+
+    // Load conversation messages
+    const loadMessages = async (conversationId) => {
+      try {
+        const response = await fetch(`/api/portfolio/conversation/${conversationId}/messages/`);
+        const data = await response.json();
+        
+        // Clear placeholder message
+        messages.innerHTML = "";
+        
+        if (data.messages && data.messages.length > 0) {
+          // Add existing messages
+          data.messages.forEach(message => {
+            addMessage(message.role, message.content);
+          });
+        } else {
+          // Add welcome message
+          addMessage("system", "Welcome to your Portfolio Chat! Ask me anything about your companies and projects.");
+        }
+      } catch (error) {
+        console.error("Error loading messages:", error);
+        addMessage("system", "Error loading messages. Please refresh the page.");
+      }
+    };
+
+    // Send a message
+    const sendMessage = async () => {
+      const message = messageInput.value.trim();
+      if (!message || !currentConversationId) return;
+
+      // Add user message to UI
+      addMessage("user", message);
+
+      // Clear input
+      messageInput.value = "";
+
+      try {
+        // Create typing indicator
+        const typingIndicator = document.createElement("div");
+        typingIndicator.id = "typing-indicator";
+        typingIndicator.className = "p-3 bg-gray-100 rounded-lg max-w-[80%]";
+        typingIndicator.textContent = "AI is thinking...";
+        messages.appendChild(typingIndicator);
+
+        // Use streaming endpoint
+        const eventSource = new EventSource(
+          `/api/portfolio/conversation/${currentConversationId}/stream/?message=${encodeURIComponent(message)}`
+        );
+
+        let assistantMessage = "";
+
+        eventSource.onmessage = function (event) {
+          const data = JSON.parse(event.data);
+          assistantMessage += data.content;
+
+          // Update or create the assistant message
+          const existingMessage = document.getElementById("current-assistant-message");
+          if (existingMessage) {
+            existingMessage.textContent = assistantMessage;
+          } else {
+            // Remove typing indicator
+            const typingIndicator = document.getElementById("typing-indicator");
+            if (typingIndicator) {
+              typingIndicator.remove();
+            }
+
+            // Add new assistant message
+            const messageEl = document.createElement("div");
+            messageEl.id = "current-assistant-message";
+            messageEl.className = "p-3 bg-blue-50 rounded-lg max-w-[80%]";
+            messageEl.textContent = assistantMessage;
+            messages.appendChild(messageEl);
+          }
+
+          // Scroll to bottom
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        };
+
+        eventSource.onerror = function () {
+          eventSource.close();
+          
+          // If we didn't receive any message, show error
+          if (!assistantMessage) {
+            // Remove typing indicator
+            const typingIndicator = document.getElementById("typing-indicator");
+            if (typingIndicator) {
+              typingIndicator.remove();
+            }
+            
+            addMessage("system", "Error: Could not get a response. Please try again.");
+          } else {
+            // Remove the temporary ID from the message
+            const existingMessage = document.getElementById("current-assistant-message");
+            if (existingMessage) {
+              existingMessage.removeAttribute("id");
+            }
+          }
+        };
+      } catch (error) {
+        console.error("Error sending message:", error);
+        addMessage("system", "Error sending message. Please try again.");
+      }
+    };
+
+    // Helper function to add a message to the chat
+    const addMessage = (role, content) => {
+      const messageEl = document.createElement("div");
+
+      if (role === "user") {
+        messageEl.className = "p-3 bg-blue-600 text-white rounded-lg max-w-[80%] ml-auto";
+      } else if (role === "assistant") {
+        messageEl.className = "p-3 bg-blue-50 rounded-lg max-w-[80%]";
+      } else {
+        messageEl.className = "p-2 text-sm text-gray-500 italic text-center";
+      }
+
+      messageEl.textContent = content;
+      messages.appendChild(messageEl);
+
+      // Scroll to bottom
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    };
+
+    // Helper function to get CSRF token
+    const getCsrfToken = () => {
+      return document.querySelector("[name=csrfmiddlewaretoken]").value;
+    };
+
+    // Event listeners
+    sendMessageBtn.addEventListener("click", sendMessage);
+
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    // Initialize
+    getPortfolioConversation();
+  });
+</script>
+{% endblock %} 

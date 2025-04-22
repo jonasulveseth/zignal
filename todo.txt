@@ -1,95 +1,96 @@
 # ZiGNAL Django Project Todo List
 
 ## 🧱 PHASE 1: Base Structure & Models
-- [x] Initialize Django project with PostgreSQL, Celery, and Redis
-- [x] Create User model (Custom with AbstractUser)
-- [x] Create a landing page design and layout structure
-- [x] Create Company model
-- [x] Create Project model
-- [x] Create UserCompanyRelation and UserProjectRelation models
-- [x] Create AIAgent model
-- [x] Create DataSilo and DataFile models
-- [x] Create Report model
-- [x] Connect models via ForeignKey and ManyToMany relationships
-- [x] Create migrations
-- [x] Set up admin panel for testing
+1. [x] Initialize Django project with PostgreSQL, Celery, and Redis
+2. [x] Create User model (Custom with AbstractUser)
+3. [x] Create a landing page design and layout structure
+4. [x] Create Company model
+5. [x] Create Project model
+6. [x] Create UserCompanyRelation and UserProjectRelation models
+7. [x] Create AIAgent model
+8. [x] Create DataSilo and DataFile models
+9. [x] Create Report model
+10. [x] Connect models via ForeignKey and ManyToMany relationships
+11. [x] Create migrations
+12. [x] Set up admin panel for testing
 
 ## 🔐 PHASE 2: Authentication & Permissions
-- [x] Implement email login with django-allauth or django-rest-auth
-- [x] Create role-based permission system (admin/member per company/project)
-- [x] Set up password reset functionality
-- [x] Add session management
-- [x] Develop email invitation flow for companies/projects
-- [x] Create user profile views
-- [x] Integrate Mailgun API for transactional emails
-- [x] Configure Heroku deployment with PostgreSQL and Redis add-ons
-- [x] Update deprecated django-allauth settings to new format
+13. [x] Implement email login with django-allauth or django-rest-auth
+14. [x] Create role-based permission system (admin/member per company/project)
+15. [x] Set up password reset functionality
+16. [x] Add session management
+17. [x] Develop email invitation flow for companies/projects
+18. [x] Create user profile views
+19. [x] Integrate Mailgun API for transactional emails
+20. [x] Configure Heroku deployment with PostgreSQL and Redis add-ons
+21. [x] Update deprecated django-allauth settings to new format
 
 ## 📂 PHASE 3: File Upload & Vector Storage
-- [x] Implement file upload via frontend/API
-- [x] Store file metadata in DataFile model
-- [x] Connect content storage to DataSilo
-- [x] Integrate vector database (Weaviate, Qdrant, Pinecone, or FAISS)
-- [x] Create pipeline for content extraction
-- [x] Implement embedding generation with OpenAI/transformers
-- [x] Add file validation and security checks
-- [x] Create file browsing interface
+22. [x] Implement file upload via frontend/API
+23. [x] Store file metadata in DataFile model
+24. [x] Connect content storage to DataSilo
+25. [x] Integrate vector database (Weaviate, Qdrant, Pinecone, or FAISS)
+26. [x] Create pipeline for content extraction
+27. [x] Implement embedding generation with OpenAI/transformers
+28. [x] Add file validation and security checks
+29. [x] Create file browsing interface
 
 ## 🤖 PHASE 4: AI Agent & OpenAI Integration
-- [x] Create agent model per project
-- [x] Implement OpenAI API wrapper
-- [x] Set up streaming responses via websockets or SSE
-- [x] Configure AI to access project documents in DataSilo
-- [x] Implement conversation history
-- [x] Create prompt templates
-- [x] Add rate limiting and usage tracking
-- [ ] Implement fallback mechanisms
+30. [x] Create agent model per project
+31. [x] Implement OpenAI API wrapper
+32. [x] Set up streaming responses via websockets or SSE
+33. [x] Configure AI to access project documents in DataSilo
+34. [x] Implement conversation history
+35. [x] Create prompt templates
+36. [x] Add rate limiting and usage tracking
+37. [ ] Implement fallback mechanisms
 
 ## 📊 PHASE 5: Report Module
-- [x] Create report template system with commands
-- [x] Implement document validation for report requirements
-- [x] Develop AI response generation for reports
-- [x] Store report history
-- [x] Associate reports with projects/companies
-- [x] Add export options (PDF, etc.)
-- [x] Create report scheduling functionality
-- [x] Implement notifications for report completion
+38. [x] Create report template system with commands
+39. [x] Implement document validation for report requirements
+40. [x] Develop AI response generation for reports
+41. [x] Store report history
+42. [x] Associate reports with projects/companies
+43. [x] Add export options (PDF, etc.)
+44. [x] Create report scheduling functionality
+45. [x] Implement notifications for report completion
 
 ## 💬 PHASE 6: Communication (Chat, Meetings, Email)
-- [ ] Build global AI chat for portfolio managers
-- [ ] Integrate meeting bot (Google Meet API + transcription)
-- [ ] Set up email reception (Mailgun or webhook)
-- [ ] Connect chat memory to DataSilo
-- [ ] Implement chat interface
-- [ ] Create communication archive
-- [ ] Add search functionality for past communications
-- [ ] Set up real-time notifications
+46. [x] Build global AI chat for portfolio managers
+47. [x] Integrate meeting bot (meetingbaas.com)
+48. [x] Set up email reception (Mailgun or webhook)
+49. [ ] Connect chat memory to DataSilo
+50. [x] Implement chat interface
+51. [ ] Create communication archive
+52. [ ] Add search functionality for past communications
+53. [x] Set up real-time notifications
 
 ## 🌍 PHASE 7: Frontend & Dashboard
-- [ ] Create role-specific dashboards (portfolio vs. company owner)
-- [ ] Build report overview interface
-- [ ] Implement AI chat UI
-- [ ] Develop file management interface
-- [ ] Create report generator UI
-- [ ] Add functionality to share reports with external recipients
-- [ ] Implement websockets for real-time AI feedback
-- [ ] Create responsive design for mobile access
+54. [x] Create role-specific dashboards (portfolio vs. company owner)
+55. [x] Build report overview interface
+56. [x] Implement AI chat UI
+57. [x] Develop file management interface
+58. [ ] Create report generator UI
+59. [ ] Add functionality to share reports with external recipients
+60. [x] Implement websockets for real-time AI feedback
+61. [x] Create responsive design for mobile access
+62. [ ] Mail setup guide, choose you own email
 
 ## 🔒 PHASE 8: Security & Deployment
-- [ ] Add OAuth2 / BankID / Azure AD support
-- [ ] Set up Celery tasks for AI processing & transcription
-- [ ] Implement logging and audit trails
-- [ ] Refine permission logic
-- [ ] Create Docker-compose setup
-- [ ] Configure CI/CD pipeline
-- [ ] Set up hosting (Railway, Fly.io, Render, or AWS)
-- [ ] Implement backup strategy
-- [ ] Create monitoring and alerting
-- [ ] Perform security audit
+63. [ ] Add OAuth2 / BankID / Azure AD support
+64. [ ] Set up Celery tasks for AI processing & transcription
+65. [ ] Implement logging and audit trails
+66. [ ] Refine permission logic
+67. [ ] Create Docker-compose setup
+68. [ ] Configure CI/CD pipeline
+69. [ ] Set up hosting (Railway, Fly.io, Render, or AWS)
+70. [ ] Implement backup strategy
+71. [ ] Create monitoring and alerting
+72. [ ] Perform security audit
 
 ## Development Environments
-- [ ] Configure development environment
-- [ ] Set up testing environment
-- [ ] Prepare production environment
-- [ ] Create environment-specific configuration
-- [ ] Document environment setup process
+73. [ ] Configure development environment
+74. [ ] Set up testing environment
+75. [ ] Prepare production environment
+76. [ ] Create environment-specific configuration
+77. [ ] Document environment setup process

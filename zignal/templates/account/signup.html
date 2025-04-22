@@ -20,11 +20,27 @@
   <div class="max-w-md w-full bg-white rounded-lg shadow-md p-8">
     <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Sign Up</h1>
 
+    {% if form.errors %}
+    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+      <h3 class="text-sm font-medium text-red-800">Please correct the following errors:</h3>
+      <ul class="mt-2 list-disc list-inside text-sm text-red-700">
+        {% for error in form.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+        {% for field in form %}
+          {% for error in field.errors %}
+            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
     <form method="POST" action="{% url 'account_signup' %}" class="space-y-4">
       {% csrf_token %}
 
       <!-- Username is not visible but we'll generate one from email -->
-      <input type="hidden" name="username" id="id_username" value="" />
+      <input type="hidden" name="username" id="id_username" value="{{ form.username.value|default:'' }}" />
 
       <div class="space-y-1">
         <label for="id_email" class="block text-sm font-medium text-gray-700"
@@ -35,9 +51,13 @@
           name="email"
           id="id_email"
           placeholder="you@example.com"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          value="{{ form.email.value|default:'' }}"
+          class="w-full px-3 py-2 border {% if form.email.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           required
         />
+        {% if form.email.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ form.email.errors.0 }}</p>
+        {% endif %}
       </div>
 
       <div class="space-y-1">
@@ -50,13 +70,17 @@
           type="password"
           name="password1"
           id="id_password1"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          class="w-full px-3 py-2 border {% if form.password1.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           required
         />
-        <p class="text-xs text-gray-500">
-          Your password must contain at least 8 characters and can't be entirely
-          numeric.
-        </p>
+        {% if form.password1.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ form.password1.errors.0 }}</p>
+        {% else %}
+          <p class="text-xs text-gray-500">
+            Your password must contain at least 8 characters and can't be entirely
+            numeric.
+          </p>
+        {% endif %}
       </div>
 
       <div class="space-y-1">
@@ -69,10 +93,17 @@
           type="password"
           name="password2"
           id="id_password2"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          class="w-full px-3 py-2 border {% if form.password2.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           required
         />
+        {% if form.password2.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ form.password2.errors.0 }}</p>
+        {% endif %}
       </div>
+
+      {% if redirect_field_value %}
+      <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+      {% endif %}
 
       <button
         type="submit"

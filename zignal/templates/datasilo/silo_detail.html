@@ -30,9 +30,9 @@
         <h1 class="text-3xl font-bold text-gray-800">{{ data_silo.name }}</h1>
         <p class="text-gray-600 mt-1">
           {% if data_silo.project %}
-          In project: <a href="{% url 'projects:detail' slug=data_silo.project.slug %}" class="text-blue-600 hover:underline">{{ data_silo.project.name }}</a>
+          In project: <a href="{% url 'projects:create_project' %}" class="text-blue-600 hover:underline">{{ data_silo.project.name }}</a>
           {% else %}
-          In company: <a href="{% url 'companies:detail' slug=data_silo.company.slug %}" class="text-blue-600 hover:underline">{{ data_silo.company.name }}</a>
+          In company: <a href="{% url 'companies:company_detail' company_id=data_silo.company.id %}" class="text-blue-600 hover:underline">{{ data_silo.company.name }}</a>
           {% endif %}
         </p>
       </div>

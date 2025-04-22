@@ -1,0 +1,69 @@
+/* Auth forms styling */
+.auth-form input[type="text"],
+.auth-form input[type="email"], 
+.auth-form input[type="password"] {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.auth-form input[type="text"]:focus,
+.auth-form input[type="email"]:focus,
+.auth-form input[type="password"]:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.auth-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.auth-form button[type="submit"] {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.auth-form button[type="submit"]:hover {
+  background-color: #2563eb;
+}
+
+.auth-error {
+  color: #b91c1c;
+  background-color: #fee2e2;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.auth-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.auth-form .auth-links {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.auth-form .auth-links a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.auth-form .auth-links a:hover {
+  text-decoration: underline;
+} 

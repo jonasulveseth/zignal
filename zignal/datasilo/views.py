@@ -14,9 +14,18 @@ from permissions import has_silo_permission, has_file_permission
 @login_required
 def data_silo_list(request):
     """List all data silos that the user has access to"""
-    # Get user's projects and companies
-    user_projects = request.user.projects.all()
-    user_companies = request.user.companies.all()
+    user = request.user
+    
+    # Get companies user has access to through UserCompanyRelation
+    user_companies = user.company_relations.values_list('company', flat=True)
+    
+    # Get projects user has access to through UserProjectRelation (if that exists)
+    # Otherwise use an empty queryset
+    try:
+        from projects.models import UserProjectRelation
+        user_projects = UserProjectRelation.objects.filter(user=user).values_list('project', flat=True)
+    except ImportError:
+        user_projects = []
     
     # Query data silos related to user's projects and companies
     data_silos = DataSilo.objects.filter(
@@ -107,6 +116,9 @@ def data_silo_delete(request, slug):
     if not has_silo_permission(request.user, data_silo, require_admin=True):
         raise PermissionDenied("You don't have permission to delete this data silo.")
     
+    # Get file count to warn user
+    file_count = data_silo.files.count()
+    
     if request.method == 'POST':
         # Record which project/company the silo belonged to for redirection
         if data_silo.project:
@@ -119,7 +131,8 @@ def data_silo_delete(request, slug):
         return redirect(redirect_url)
     
     return render(request, 'datasilo/silo_delete.html', {
-        'data_silo': data_silo
+        'data_silo': data_silo,
+        'file_count': file_count
     })
 
 
@@ -133,25 +146,38 @@ def file_upload(request, slug):
         raise PermissionDenied("You don't have permission to upload files to this data silo.")
     
     if request.method == 'POST':
+        # Debug information
+        print("POST data:", request.POST)
+        print("FILES data:", request.FILES)
+        
         form = DataFileForm(request.POST, request.FILES, data_silo=data_silo, user=request.user)
         if form.is_valid():
-            data_file = form.save()
-            
-            # Update file size after save
-            data_file.size = data_file.file.size
-            data_file.save()
-            
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                # Return JSON response for AJAX requests
-                return JsonResponse({
-                    'success': True,
-                    'file_id': data_file.id,
-                    'file_name': data_file.name,
-                    'file_url': data_file.file.url
-                })
-            
-            messages.success(request, "File uploaded successfully.")
-            return redirect('datasilo:silo_detail', slug=data_silo.slug)
+            try:
+                data_file = form.save()
+                
+                # Update file size after save
+                data_file.size = data_file.file.size
+                data_file.save()
+                
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    # Return JSON response for AJAX requests
+                    return JsonResponse({
+                        'success': True,
+                        'file_id': data_file.id,
+                        'file_name': data_file.name,
+                        'file_url': data_file.file.url
+                    })
+                
+                messages.success(request, "File uploaded successfully.")
+                return redirect('datasilo:silo_detail', slug=data_silo.slug)
+            except Exception as e:
+                print("Error saving file:", str(e))
+                messages.error(request, f"Error saving file: {str(e)}")
+        else:
+            print("Form errors:", form.errors)
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Error in {field}: {error}")
     else:
         form = DataFileForm(data_silo=data_silo, user=request.user)
     

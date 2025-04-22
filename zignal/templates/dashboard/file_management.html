@@ -1,0 +1,210 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}File Management | Zignal{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">File Management</h1>
+      <p class="mt-1 text-sm text-gray-500">
+        Manage your data files and documents
+      </p>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6 mb-6">
+      <form method="get" action="{% url 'file_management' %}">
+        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+          <div class="sm:col-span-4">
+            <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+            <div class="mt-1">
+              <input type="text" name="search" id="search" value="{{ search_query }}" 
+                class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                placeholder="Search for files or data silos">
+            </div>
+          </div>
+          <div class="sm:col-span-2">
+            <label for="file_type" class="block text-sm font-medium text-gray-700">File Type</label>
+            <div class="mt-1">
+              <select id="file_type" name="file_type" 
+                class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                <option value="" {% if not file_type %}selected{% endif %}>All Types</option>
+                <option value="pdf" {% if file_type == 'pdf' %}selected{% endif %}>PDF</option>
+                <option value="docx" {% if file_type == 'docx' %}selected{% endif %}>Word (DOCX)</option>
+                <option value="xlsx" {% if file_type == 'xlsx' %}selected{% endif %}>Excel (XLSX)</option>
+                <option value="csv" {% if file_type == 'csv' %}selected{% endif %}>CSV</option>
+                <option value="txt" {% if file_type == 'txt' %}selected{% endif %}>Text</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="mt-5 flex justify-end">
+          <button type="submit" 
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            Search
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Upload File Section -->
+    <div class="bg-white shadow sm:rounded-lg mb-8">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Upload New File
+        </h3>
+        <div class="mt-2 max-w-xl text-sm text-gray-500">
+          <p>Upload files to be processed by the Zignal AI. Supported formats: PDF, DOCX, XLSX, CSV, TXT.</p>
+        </div>
+        <form action="#" method="post" enctype="multipart/form-data" class="mt-5 sm:flex sm:items-center">
+          <div class="w-full sm:max-w-xs">
+            <label for="data_silo" class="sr-only">Data Silo</label>
+            <select id="data_silo" name="data_silo" 
+              class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+              {% for silo in data_silos %}
+                <option value="{{ silo.id }}">{{ silo.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mt-3 sm:mt-0 sm:ml-3 w-full sm:max-w-xs">
+            <label for="file" class="sr-only">File</label>
+            <input type="file" name="file" id="file" class="block w-full text-sm text-gray-500
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-md file:border-0
+              file:text-sm file:font-medium
+              file:bg-blue-50 file:text-blue-700
+              hover:file:bg-blue-100">
+          </div>
+          <button type="submit" 
+            class="mt-3 w-full inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+            Upload
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Data Silos -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md mb-8">
+      <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Data Silos
+          </h3>
+          <button type="button" 
+            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            New Silo
+          </button>
+        </div>
+      </div>
+      <ul role="list" class="divide-y divide-gray-200">
+        {% if data_silos %}
+          {% for silo in data_silos %}
+            <li>
+              <a href="#" class="block hover:bg-gray-50">
+                <div class="px-4 py-4 sm:px-6">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-blue-600 truncate">
+                      {{ silo.name }}
+                    </p>
+                    <div class="ml-2 flex-shrink-0 flex">
+                      <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {{ silo.file_count }} files
+                      </p>
+                    </div>
+                  </div>
+                  <div class="mt-2 sm:flex sm:justify-between">
+                    <div class="sm:flex">
+                      <p class="flex items-center text-sm text-gray-500">
+                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                        </svg>
+                        {{ silo.company.name|default:"Global Silo" }}
+                      </p>
+                    </div>
+                    <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                      <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                      </svg>
+                      <p>
+                        Last updated <time datetime="{{ silo.updated_at|date:'Y-m-d' }}">{{ silo.updated_at|date:"F j, Y" }}</time>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </li>
+          {% endfor %}
+        {% else %}
+          <li class="px-4 py-5 sm:px-6 text-center text-gray-500">
+            No data silos available yet
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+
+    <!-- Recent Files -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+      <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Recent Files
+        </h3>
+      </div>
+      <ul role="list" class="divide-y divide-gray-200">
+        {% if recent_files %}
+          {% for file in recent_files %}
+            <li>
+              <a href="#" class="block hover:bg-gray-50">
+                <div class="px-4 py-4 sm:px-6">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-blue-600 truncate">
+                      {{ file.name }}
+                    </p>
+                    <div class="ml-2 flex-shrink-0 flex">
+                      <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {{ file.file_type|upper }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="mt-2 sm:flex sm:justify-between">
+                    <div class="sm:flex">
+                      <p class="flex items-center text-sm text-gray-500">
+                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm8 8v-4H5v4h10z" clip-rule="evenodd" />
+                        </svg>
+                        {{ file.data_silo.name }}
+                      </p>
+                      {% if file.file_size %}
+                      <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {{ file.file_size|filesizeformat }}
+                      </p>
+                      {% endif %}
+                    </div>
+                    <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                      <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                      </svg>
+                      <p>
+                        Uploaded on <time datetime="{{ file.uploaded_at|date:'Y-m-d' }}">{{ file.uploaded_at|date:"F j, Y" }}</time>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </li>
+          {% endfor %}
+        {% else %}
+          <li class="px-4 py-5 sm:px-6 text-center text-gray-500">
+            No files uploaded yet
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,173 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Report Management | Zignal{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Report Management</h1>
+      <p class="mt-1 text-sm text-gray-500">
+        View and manage all your AI-generated reports
+      </p>
+    </div>
+
+    <!-- Report Filters -->
+    <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6 mb-6">
+      <form method="get" action="{% url 'report_management' %}">
+        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+          <div class="sm:col-span-3">
+            <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+            <div class="mt-1">
+              <input type="text" name="search" id="search" 
+                class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                placeholder="Search for reports...">
+            </div>
+          </div>
+          <div class="sm:col-span-2">
+            <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+            <div class="mt-1">
+              <select id="status" name="status" 
+                class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                <option value="">All Statuses</option>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          </div>
+          <div class="sm:col-span-1">
+            <label for="sort" class="block text-sm font-medium text-gray-700">Sort By</label>
+            <div class="mt-1">
+              <select id="sort" name="sort" 
+                class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="title">Title</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="mt-5 flex justify-end">
+          <button type="submit" 
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            Filter
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Create Report Button -->
+    <div class="mb-6 flex justify-end">
+      <button type="button" 
+        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+        </svg>
+        Generate New Report
+      </button>
+    </div>
+
+    <!-- Reports List -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+      <ul role="list" class="divide-y divide-gray-200">
+        {% if reports %}
+          {% for report in reports %}
+            <li>
+              <a href="#" class="block hover:bg-gray-50">
+                <div class="px-4 py-4 sm:px-6">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-blue-600 truncate">
+                      {{ report.title }}
+                    </p>
+                    <div class="ml-2 flex-shrink-0 flex">
+                      <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        {{ report.status|default:"Completed" }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="mt-2 sm:flex sm:justify-between">
+                    <div class="sm:flex">
+                      <p class="flex items-center text-sm text-gray-500">
+                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                        </svg>
+                        {{ report.project.company.name|default:"Unknown Company" }}
+                      </p>
+                      <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm8 8v-4H5v4h10z" clip-rule="evenodd" />
+                        </svg>
+                        {{ report.project.name|default:"Unknown Project" }}
+                      </p>
+                    </div>
+                    <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                      <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                      </svg>
+                      <p>
+                        Created on <time datetime="{{ report.created_at|date:'Y-m-d' }}">{{ report.created_at|date:"F j, Y" }}</time>
+                      </p>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <p class="text-sm text-gray-500 line-clamp-2">
+                      {{ report.summary|default:"No summary available"|truncatewords:30 }}
+                    </p>
+                  </div>
+                  <div class="mt-2 flex space-x-2">
+                    <button type="button" class="text-sm text-blue-600 hover:text-blue-900">View</button>
+                    <button type="button" class="text-sm text-blue-600 hover:text-blue-900">Download PDF</button>
+                    <button type="button" class="text-sm text-blue-600 hover:text-blue-900">Share</button>
+                  </div>
+                </div>
+              </a>
+            </li>
+          {% endfor %}
+        {% else %}
+          <li class="px-4 py-8 text-center text-gray-500">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No reports</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by creating a new report.</p>
+            <div class="mt-6">
+              <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Generate New Report
+              </button>
+            </div>
+          </li>
+        {% endif %}
+      </ul>
+      
+      <!-- Pagination -->
+      {% if reports and reports.paginator.num_pages > 1 %}
+      <nav class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6" aria-label="Pagination">
+        <div class="hidden sm:block">
+          <p class="text-sm text-gray-700">
+            Showing <span class="font-medium">{{ reports.start_index }}</span> to <span class="font-medium">{{ reports.end_index }}</span> of <span class="font-medium">{{ reports.paginator.count }}</span> results
+          </p>
+        </div>
+        <div class="flex-1 flex justify-between sm:justify-end">
+          {% if reports.has_previous %}
+          <a href="?page={{ reports.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Previous
+          </a>
+          {% endif %}
+          {% if reports.has_next %}
+          <a href="?page={{ reports.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Next
+          </a>
+          {% endif %}
+        </div>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %} 

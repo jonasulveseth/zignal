@@ -20,15 +20,30 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
 from . import views
+import sys
+import os
+
+# Add the path to the mail_receiver app if it's not in the sys.path
+sys.path.insert(0, os.path.join(settings.BASE_DIR.parent, ''))
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path('chat/', views.chat, name='chat'),
     
+    # Portfolio Manager Global Chat
+    path('portfolio-chat/', views.portfolio_manager_chat, name='portfolio_manager_chat'),
+    
+    # Dashboard routes
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/files/', views.file_management, name='file_management'),
+    path('dashboard/reports/', views.report_management, name='report_management'),
+    path('dashboard/company-silo/', views.redirect_to_company_silo, name='company_silo'),
+    
     # Test view
     path('test/', views.test_view, name='test_view'),
     path('test-base/', views.test_base_view, name='test_base_view'),
+    path('debug/toggle-user-type/', views.toggle_user_type, name='toggle_user_type'),
     
     # django-allauth URLs - main authentication system
     path('accounts/', include('allauth.urls')),
@@ -45,10 +60,20 @@ urlpatterns = [
     path('logout/', RedirectView.as_view(url='/accounts/logout/', permanent=True), name='logout_redirect'),
     path('password_reset/', RedirectView.as_view(url='/accounts/password/reset/', permanent=True), name='password_reset_redirect'),
     
-    path('dashboard/', views.dashboard, name='dashboard'),
     path('', include('invitations.urls')),
     path('', include('agents.urls')),
     path('', include('profiles.urls')),
+    path('', include('projects.urls', namespace='projects')),
+    path('', include('companies.urls', namespace='companies')),
+    
+    # Data Silo URLs
+    path('', include('datasilo.urls', namespace='datasilo')),
+    
+    # Mail Receiver webhook URLs
+    path('mail/', include('mail_receiver.urls')),
+    
+    # Notification API endpoints
+    path('', include('notifications.urls')),
 ]
 
 # Serve media files in development

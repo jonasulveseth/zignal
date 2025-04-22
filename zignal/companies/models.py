@@ -12,6 +12,8 @@ class Company(models.Model):
     website = models.URLField(blank=True, null=True)
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
     address = models.TextField(blank=True, null=True)
+    company_email = models.CharField(max_length=255, blank=True, null=True, unique=True, 
+                                   help_text="Unique email prefix for receiving emails (e.g., 'acme' will become acme@yourservice.com)")
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -37,6 +39,16 @@ class Company(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+    
+    def get_full_email_address(self):
+        """
+        Get the full email address for receiving emails
+        """
+        if self.company_email:
+            from django.conf import settings
+            domain = getattr(settings, 'EMAIL_DOMAIN', 'zignal.com')
+            return f"{self.company_email}@{domain}"
+        return None
 
 
 class UserCompanyRelation(models.Model):

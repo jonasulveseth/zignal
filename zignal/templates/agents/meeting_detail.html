@@ -1,0 +1,320 @@
+{% extends "layouts/base.html" %}
+{% block title %}Meeting: {{ meeting.meeting_title }}{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+  <div class="mb-6">
+    <a href="{% url 'agents:meeting_list' %}" class="text-blue-600 hover:text-blue-800 flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+      </svg>
+      Back to Meetings
+    </a>
+  </div>
+  
+  {% if messages %}
+    <div class="mb-6">
+      {% for message in messages %}
+        <div class="p-4 rounded-md {% if message.tags == 'success' %}bg-green-50 border border-green-200 text-green-700{% elif message.tags == 'error' %}bg-red-50 border border-red-200 text-red-700{% else %}bg-blue-50 border border-blue-200 text-blue-700{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  
+  <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+    <div class="p-6">
+      <div class="flex justify-between items-start">
+        <h1 class="text-2xl font-bold mb-4">{{ meeting.meeting_title }}</h1>
+        <span class="px-3 py-1 rounded-full text-sm font-semibold
+          {% if meeting.status == 'scheduled' %}bg-blue-100 text-blue-700
+          {% elif meeting.status == 'in_progress' %}bg-yellow-100 text-yellow-700
+          {% elif meeting.status == 'completed' %}bg-green-100 text-green-700
+          {% elif meeting.status == 'failed' %}bg-red-100 text-red-700
+          {% else %}bg-gray-100 text-gray-700{% endif %}">
+          {{ meeting.get_status_display }}
+        </span>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <h3 class="text-sm font-medium text-gray-500">Platform</h3>
+          <p class="mt-1">
+            {% if meeting.platform == 'zoom' %}
+              Zoom
+            {% elif meeting.platform == 'teams' %}
+              Microsoft Teams
+            {% elif meeting.platform == 'google_meet' %}
+              Google Meet
+            {% else %}
+              {{ meeting.platform }}
+            {% endif %}
+          </p>
+        </div>
+        
+        <div>
+          <h3 class="text-sm font-medium text-gray-500">Scheduled Time</h3>
+          <p class="mt-1">{{ meeting.scheduled_time|date:"F j, Y, g:i a" }}</p>
+        </div>
+        
+        <div>
+          <h3 class="text-sm font-medium text-gray-500">Meeting URL</h3>
+          <p class="mt-1">
+            <a href="{{ meeting.meeting_url }}" target="_blank" class="text-blue-600 hover:text-blue-800 break-all">
+              {{ meeting.meeting_url }}
+            </a>
+          </p>
+        </div>
+        
+        <div>
+          <h3 class="text-sm font-medium text-gray-500">Scheduled By</h3>
+          <p class="mt-1">{{ meeting.scheduled_by.full_name }}</p>
+        </div>
+        
+        {% if meeting.project %}
+          <div>
+            <h3 class="text-sm font-medium text-gray-500">Project</h3>
+            <p class="mt-1">{{ meeting.project.name }}</p>
+          </div>
+        {% endif %}
+        
+        {% if meeting.company %}
+          <div>
+            <h3 class="text-sm font-medium text-gray-500">Company</h3>
+            <p class="mt-1">{{ meeting.company.name }}</p>
+          </div>
+        {% endif %}
+        
+        {% if meeting.duration_minutes %}
+          <div>
+            <h3 class="text-sm font-medium text-gray-500">Duration</h3>
+            <p class="mt-1">{{ meeting.duration_minutes }} minutes</p>
+          </div>
+        {% endif %}
+      </div>
+      
+      {% if meeting.status == 'scheduled' and meeting.scheduled_by == request.user %}
+        <div class="mt-4">
+          <a href="{% url 'agents:cancel_meeting' meeting_id=meeting.id %}" class="text-red-600 hover:text-red-800 font-medium" onclick="return confirm('Are you sure you want to cancel this meeting?')">
+            Cancel Meeting
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  {% if meeting.status == 'completed' or meeting.status == 'in_progress' %}
+    {% if meeting.transcript_summary %}
+      <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div class="p-6">
+          <h2 class="text-xl font-semibold mb-4">Meeting Summary</h2>
+          <div class="prose max-w-none">
+            {{ meeting.transcript_summary|linebreaks }}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    
+    {% if meeting.transcript_raw %}
+      <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div class="p-6">
+          <h2 class="text-xl font-semibold mb-4">Transcript</h2>
+          <div class="prose max-w-none bg-gray-50 p-4 rounded-md overflow-auto max-h-96">
+            <pre class="text-sm whitespace-pre-wrap">{{ meeting.transcript_raw }}</pre>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    
+    {% if meeting.recording_url %}
+      <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div class="p-6">
+          <h2 class="text-xl font-semibold mb-4">Recording</h2>
+          <a href="{{ meeting.recording_url }}" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+            </svg>
+            View Recording
+          </a>
+        </div>
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+      <div class="p-6">
+        <h2 class="text-xl font-semibold mb-4">Meeting Bot Status</h2>
+        
+        {% if meeting.status == 'scheduled' %}
+          <div class="flex items-start p-4 bg-blue-50 rounded-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p class="text-blue-700">The meeting bot has been scheduled and will join the meeting automatically.</p>
+              <p class="text-blue-600 mt-2">Meeting ID: {{ meeting.meetingbaas_bot_id }}</p>
+            </div>
+          </div>
+        {% elif meeting.status == 'failed' %}
+          <div class="flex items-start p-4 bg-red-50 rounded-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p class="text-red-700">The meeting bot encountered an error.</p>
+              <p class="text-red-600 mt-2">Please try scheduling the meeting again or contact support.</p>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+  
+  {% if meeting.conversation and meeting.conversation.messages.exists %}
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+      <div class="p-6">
+        <h2 class="text-xl font-semibold mb-4">Chat with Transcript</h2>
+        
+        <div id="chat-container" class="border border-gray-200 rounded-lg mb-4">
+          <div id="messages" class="p-4 max-h-96 overflow-y-auto space-y-4">
+            {% for message in conversation_messages %}
+              <div class="{% if message.role == 'user' %}bg-blue-100 ml-12{% elif message.role == 'assistant' %}bg-gray-100 mr-12{% else %}bg-yellow-50 italic text-sm{% endif %} p-3 rounded-lg">
+                {% if message.role == 'system' and 'Transcript from meeting' in message.content %}
+                  <p><strong>Meeting Transcript Loaded</strong></p>
+                  <p class="text-gray-500 text-sm">The transcript has been loaded and is ready for questions.</p>
+                {% else %}
+                  {{ message.content|linebreaks }}
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+          
+          <div class="border-t border-gray-200 p-3 flex">
+            <input 
+              type="text" 
+              id="message-input"
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Ask a question about this meeting..."
+            >
+            <button 
+              id="send-message"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-md"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+{% if meeting.conversation %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('chat-container');
+    const messagesContainer = document.getElementById('messages');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-message');
+    
+    // Scroll to bottom of messages
+    const scrollToBottom = () => {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    };
+    
+    // Initial scroll
+    scrollToBottom();
+    
+    // Handle sending a message
+    const sendMessage = async () => {
+      const message = messageInput.value.trim();
+      if (!message) return;
+      
+      // Add user message to UI
+      const userMessageDiv = document.createElement('div');
+      userMessageDiv.className = 'bg-blue-100 ml-12 p-3 rounded-lg';
+      userMessageDiv.textContent = message;
+      messagesContainer.appendChild(userMessageDiv);
+      
+      // Clear input
+      messageInput.value = '';
+      
+      // Scroll to show the message
+      scrollToBottom();
+      
+      // Add typing indicator
+      const typingIndicator = document.createElement('div');
+      typingIndicator.id = 'typing-indicator';
+      typingIndicator.className = 'bg-gray-100 mr-12 p-3 rounded-lg';
+      typingIndicator.innerHTML = '<div class="flex space-x-1"><div class="dot animate-bounce"></div><div class="dot animate-bounce delay-75"></div><div class="dot animate-bounce delay-150"></div></div>';
+      messagesContainer.appendChild(typingIndicator);
+      scrollToBottom();
+      
+      try {
+        // Send to API
+        const response = await fetch(`/api/conversations/{{ meeting.conversation.id }}/chat/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({ message })
+        });
+        
+        const data = await response.json();
+        
+        // Remove typing indicator
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) indicator.remove();
+        
+        // Add AI response
+        const aiMessageDiv = document.createElement('div');
+        aiMessageDiv.className = 'bg-gray-100 mr-12 p-3 rounded-lg';
+        aiMessageDiv.innerHTML = data.response.replace(/\n/g, '<br>');
+        messagesContainer.appendChild(aiMessageDiv);
+        
+        // Scroll to show response
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error sending message:', error);
+        
+        // Remove typing indicator
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) indicator.remove();
+        
+        // Show error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'bg-red-100 p-3 rounded-lg text-center';
+        errorDiv.textContent = 'Error sending message. Please try again.';
+        messagesContainer.appendChild(errorDiv);
+        scrollToBottom();
+      }
+    };
+    
+    // Event listeners
+    sendButton.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+    
+    // Add styling for typing indicator
+    const style = document.createElement('style');
+    style.textContent = `
+      .dot {
+        width: 8px;
+        height: 8px;
+        background-color: #6B7280;
+        border-radius: 50%;
+      }
+      .delay-75 {
+        animation-delay: 0.1s;
+      }
+      .delay-150 {
+        animation-delay: 0.2s;
+      }
+    `;
+    document.head.appendChild(style);
+  });
+</script>
+{% endif %}
+{% endblock %} 
