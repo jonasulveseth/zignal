@@ -21,9 +21,6 @@ from django.db.models import Count
 User = get_user_model()
 
 def home(request):
-    if request.user.is_authenticated:
-        # Redirect authenticated users to dashboard
-        return redirect('dashboard')
     return render(request, 'home.html')
 
 def chat(request):
