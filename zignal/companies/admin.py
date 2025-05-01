@@ -18,6 +18,12 @@ class CompanyAdmin(admin.ModelAdmin):
         (None, {
             'fields': ('name', 'slug', 'description', 'website', 'logo', 'address')
         }),
+        ('Email Integration', {
+            'fields': ('company_email',)
+        }),
+        ('OpenAI Integration', {
+            'fields': ('openai_assistant_id', 'openai_vector_store_id')
+        }),
         ('Metadata', {
             'fields': ('created_by', 'created_at', 'updated_at')
         }),

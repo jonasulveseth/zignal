@@ -123,6 +123,19 @@ class DataFile(models.Model):
     processed_at = models.DateTimeField(null=True, blank=True)
     embedding_available = models.BooleanField(default=False)
     
+    # OpenAI Vector Store fields
+    vector_store_file_id = models.CharField(max_length=255, blank=True, null=True,
+                                          help_text="OpenAI Vector Store File ID")
+    vector_store_status = models.CharField(max_length=20, blank=True, null=True, default='pending',
+                                         choices=[
+                                             ('pending', 'Pending Vector Processing'),
+                                             ('processing', 'Processing for Vector Store'),
+                                             ('processed', 'Added to Vector Store'),
+                                             ('failed', 'Failed to Add to Vector Store'),
+                                             ('skipped', 'Skipped (Unsupported Format)')
+                                         ])
+    vector_store_processed_at = models.DateTimeField(null=True, blank=True)
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

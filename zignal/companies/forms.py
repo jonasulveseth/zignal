@@ -8,6 +8,7 @@ class CompanyForm(forms.ModelForm):
     """
     Form for creating and editing companies
     """
+    
     class Meta:
         model = Company
         fields = ['name', 'description']

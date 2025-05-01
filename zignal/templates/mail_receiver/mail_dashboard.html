@@ -62,7 +62,7 @@
           </div>
           
           <div class="flex justify-between items-center">
-            <a href="{% url 'setup_company_email' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            <a href="{% url 'companies:setup_company_email' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
               Update Email Settings
             </a>
             <p class="text-sm text-gray-500">Last updated: {{ company.updated_at|date:"F j, Y" }}</p>
@@ -85,7 +85,7 @@
           </div>
           
           <div class="text-center">
-            <a href="{% url 'setup_company_email' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+            <a href="{% url 'companies:setup_company_email' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
               Set Up Email Integration Now
             </a>
           </div>

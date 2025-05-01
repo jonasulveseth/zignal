@@ -12,6 +12,11 @@ class Agent(models.Model):
         ('email', 'Email Agent'),
     )
     
+    API_VERSIONS = (
+        ('chat_completion', 'Chat Completion API'),
+        ('assistants', 'Assistants API'),
+    )
+    
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     agent_type = models.CharField(max_length=20, choices=AGENT_TYPES, default='chat')
@@ -22,6 +27,11 @@ class Agent(models.Model):
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # OpenAI Assistants API fields
+    api_version = models.CharField(max_length=20, choices=API_VERSIONS, default='chat_completion')
+    assistant_id = models.CharField(max_length=255, blank=True, null=True, 
+                                  help_text="OpenAI Assistant ID (only used with Assistants API)")
     
     project = models.ForeignKey(
         'projects.Project', 
@@ -56,6 +66,10 @@ class Conversation(models.Model):
     title = models.CharField(max_length=200, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # OpenAI Assistants API fields
+    thread_id = models.CharField(max_length=255, blank=True, null=True,
+                               help_text="OpenAI Thread ID (only used with Assistants API)")
     
     def __str__(self):
         return f"Conversation {self.id} with {self.agent.name}"

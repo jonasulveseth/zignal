@@ -66,6 +66,9 @@ urlpatterns = [
     path('', include('projects.urls', namespace='projects')),
     path('', include('companies.urls', namespace='companies')),
     
+    # Reports URLs
+    path('', include('reports.urls', namespace='reports')),
+    
     # Data Silo URLs
     path('', include('datasilo.urls', namespace='datasilo')),
     

@@ -1,5 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Q
 from .models import Report, ReportTemplate, ReportSchedule
 
 
@@ -28,7 +29,7 @@ class ReportTemplateForm(forms.ModelForm):
         # Filter company choices if user is provided
         if self.user:
             from companies.models import Company
-            user_companies = Company.objects.filter(members=self.user)
+            user_companies = Company.objects.filter(user_relations__user=self.user)
             self.fields['company'].queryset = user_companies
             
         # Help text for template content
@@ -73,16 +74,16 @@ class ReportForm(forms.ModelForm):
             from projects.models import Project
             from companies.models import Company
             
-            user_projects = Project.objects.filter(members=self.user)
-            user_companies = Company.objects.filter(members=self.user)
+            user_projects = Project.objects.filter(user_relations__user=self.user)
+            user_companies = Company.objects.filter(user_relations__user=self.user)
             
             self.fields['project'].queryset = user_projects
             self.fields['company'].queryset = user_companies
             
             # Filter templates based on user's companies
             self.fields['template'].queryset = ReportTemplate.objects.filter(
-                company__in=user_companies
-            ).distinct() | ReportTemplate.objects.filter(company__isnull=True)
+                Q(company__in=user_companies) | Q(company__isnull=True)
+            ).distinct()
         
         # Help text for parameters
         self.fields['parameters'].help_text = _(
@@ -136,16 +137,16 @@ class ReportScheduleForm(forms.ModelForm):
             from projects.models import Project
             from companies.models import Company
             
-            user_projects = Project.objects.filter(members=self.user)
-            user_companies = Company.objects.filter(members=self.user)
+            user_projects = Project.objects.filter(user_relations__user=self.user)
+            user_companies = Company.objects.filter(user_relations__user=self.user)
             
             self.fields['project'].queryset = user_projects
             self.fields['company'].queryset = user_companies
             
             # Filter templates based on user's companies
             self.fields['template'].queryset = ReportTemplate.objects.filter(
-                company__in=user_companies
-            ).distinct() | ReportTemplate.objects.filter(company__isnull=True)
+                Q(company__in=user_companies) | Q(company__isnull=True)
+            ).distinct()
         
         # Help text
         self.fields['day_of_week'].help_text = _("Required for weekly schedules (0=Monday, 6=Sunday)")

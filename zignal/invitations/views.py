@@ -60,7 +60,7 @@ def create_company_invitation(request, company_id):
         # Simple validation
         if not email:
             messages.error(request, "Email is required")
-            return redirect('company_detail', company_id=company_id)
+            return redirect('companies:company_team')
         
         # Check if an invitation already exists
         existing_invitation = Invitation.objects.filter(
@@ -71,7 +71,7 @@ def create_company_invitation(request, company_id):
         
         if existing_invitation:
             messages.warning(request, "An invitation is already pending for this email")
-            return redirect('company_detail', company_id=company_id)
+            return redirect('companies:company_team')
         
         # Create the invitation
         invitation = Invitation.objects.create(
@@ -87,7 +87,7 @@ def create_company_invitation(request, company_id):
         invitation.send_invitation_email(request)
         
         messages.success(request, f"Invitation sent to {email}")
-        return redirect('company_detail', company_id=company_id)
+        return redirect('companies:company_team')
     
     # GET request: show form
     return render(request, 'invitations/create_company_invitation.html', {'company': company})
@@ -106,7 +106,7 @@ def create_project_invitation(request, project_id):
         # Simple validation
         if not email:
             messages.error(request, "Email is required")
-            return redirect('project_detail', project_id=project_id)
+            return redirect('projects:project_detail', project_id=project_id)
         
         # Check if an invitation already exists
         existing_invitation = Invitation.objects.filter(
@@ -117,7 +117,7 @@ def create_project_invitation(request, project_id):
         
         if existing_invitation:
             messages.warning(request, "An invitation is already pending for this email")
-            return redirect('project_detail', project_id=project_id)
+            return redirect('projects:project_detail', project_id=project_id)
         
         # Create the invitation
         invitation = Invitation.objects.create(
@@ -133,7 +133,7 @@ def create_project_invitation(request, project_id):
         invitation.send_invitation_email(request)
         
         messages.success(request, f"Invitation sent to {email}")
-        return redirect('project_detail', project_id=project_id)
+        return redirect('projects:project_detail', project_id=project_id)
     
     # GET request: show form
     return render(request, 'invitations/create_project_invitation.html', {'project': project})

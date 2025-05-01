@@ -1,0 +1,28 @@
+ZIGNAL - INVITATION
+
+{% if invitation.invitation_type == 'company' %}
+You've been invited to join {{ company.name }} on Zignal!
+{% else %}
+You've been invited to join the project {{ project.name }} on Zignal!
+{% endif %}
+
+You've been invited with the role: {{ invitation.role|title }}
+
+{% if invitation.message %}
+Message from the inviter:
+"{{ invitation.message }}"
+{% endif %}
+
+Please follow one of these links to respond to this invitation:
+
+Accept: {{ accept_url }}
+Decline: {{ decline_url }}
+
+This invitation will expire on {{ invitation.expires_at|date:"F j, Y" }}.
+
+If you don't have an account yet, you'll be able to create one when accepting this invitation.
+
+If you didn't expect this invitation, you can safely ignore this email.
+
+-- 
+Zignal - Investment Tracking Platform 

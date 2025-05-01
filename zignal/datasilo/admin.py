@@ -43,9 +43,10 @@ class DataSiloAdmin(admin.ModelAdmin):
 @admin.register(DataFile)
 class DataFileAdmin(admin.ModelAdmin):
     list_display = ('name', 'file_type', 'data_silo', 'status', 'size_display', 'uploaded_by', 'created_at')
-    list_filter = ('file_type', 'status', 'data_silo', 'project', 'company')
+    list_filter = ('file_type', 'status', 'data_silo', 'project', 'company', 'vector_store_status')
     search_fields = ('name', 'description', 'data_silo__name')
-    readonly_fields = ('content_type', 'size', 'created_at', 'updated_at', 'processed_at', 'embedding_available')
+    readonly_fields = ('content_type', 'size', 'created_at', 'updated_at', 'processed_at', 'embedding_available', 
+                      'vector_store_processed_at')
     autocomplete_fields = ['data_silo', 'project', 'company', 'uploaded_by']
     fieldsets = (
         (None, {
@@ -56,6 +57,9 @@ class DataFileAdmin(admin.ModelAdmin):
         }),
         ('Processing', {
             'fields': ('status', 'processed_at', 'embedding_available')
+        }),
+        ('OpenAI Vector Store', {
+            'fields': ('vector_store_file_id', 'vector_store_status', 'vector_store_processed_at')
         }),
         ('File Details', {
             'fields': ('content_type', 'size')

@@ -74,7 +74,7 @@
 59. [ ] Add functionality to share reports with external recipients
 60. [x] Implement websockets for real-time AI feedback
 61. [x] Create responsive design for mobile access
-62. [ ] Mail setup guide, choose you own email
+62. [x] Mail setup guide, choose you own email
 
 ## 🔒 PHASE 8: Security & Deployment
 63. [ ] Add OAuth2 / BankID / Azure AD support
@@ -94,3 +94,7 @@
 75. [ ] Prepare production environment
 76. [ ] Create environment-specific configuration
 77. [ ] Document environment setup process
+
+##Ongoing tasks
+78. [ ] Test creation of vector database
+79. [ ] Test chat 

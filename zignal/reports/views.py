@@ -11,6 +11,7 @@ from .models import ReportTemplate, Report, ReportSchedule
 from .services.report_generation_service import ReportGenerationService
 from .forms import ReportForm, ReportTemplateForm, ReportScheduleForm
 from permissions import has_project_permission, has_company_permission
+from companies.models import Company
 
 
 @login_required
@@ -91,6 +92,22 @@ def report_create(request):
     """
     Create a new report
     """
+    # Initial data for form
+    initial_data = {}
+    
+    # Check if company ID was passed in the query string
+    company_id = request.GET.get('company')
+    if company_id:
+        try:
+            company = Company.objects.get(id=company_id)
+            # Check if user has permission to access this company
+            has_access = company.user_relations.filter(user=request.user).exists()
+            
+            if has_access:
+                initial_data['company'] = company
+        except (Company.DoesNotExist, ValueError):
+            pass
+    
     if request.method == 'POST':
         form = ReportForm(request.POST, user=request.user)
         if form.is_valid():
@@ -106,7 +123,7 @@ def report_create(request):
             
             return redirect('reports:report_detail', slug=report.slug)
     else:
-        form = ReportForm(user=request.user)
+        form = ReportForm(user=request.user, initial=initial_data)
     
     context = {
         'form': form,

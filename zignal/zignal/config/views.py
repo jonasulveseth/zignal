@@ -46,7 +46,7 @@ def dashboard(request):
     # If user doesn't have a company, redirect to company setup
     if not has_company:
         messages.info(request, "You need to set up a company before you can access the dashboard.")
-        return redirect('setup_company')
+        return redirect('companies:setup_company')
     
     # Debug print to check user type
     print(f"Current user: {user.username}, User type: {user.user_type}")

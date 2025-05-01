@@ -6,7 +6,10 @@ from django.conf import settings
 from .models import Company, UserCompanyRelation
 from .forms import CompanyForm, CompanyEmailForm
 from core.tasks import create_default_project_and_silo
+from .services.openai_service import CompanyOpenAIService
 import logging
+from invitations.models import Invitation
+import datetime
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -38,18 +41,41 @@ def setup_company(request):
             company = form.save(commit=False)
             company.created_by = request.user
             company.save()
+            logger.info(f"Created company: {company.name} (ID: {company.id})")
             
             # Create the relation between user and company
             UserCompanyRelation.objects.create(
                 user=request.user,
                 company=company,
-                role='admin'  # First user is always an admin
+                role='owner'  # Make the current user the owner
             )
+            logger.info(f"Created user-company relation for user {request.user.email} and company {company.name}")
+            
+            # Set up OpenAI resources for the company
+            logger.info(f"Setting up OpenAI resources for company {company.name}")
+            openai_service = CompanyOpenAIService()
+            result = openai_service.setup_company_ai(company)
+            
+            if result['success']:
+                company.openai_assistant_id = result['assistant_id']
+                company.openai_vector_store_id = result['vector_store_id']
+                company.save()
+                logger.info(f"Created and saved OpenAI resources for company: {company.name} - Assistant ID: {company.openai_assistant_id}, Vector Store ID: {company.openai_vector_store_id}")
+            else:
+                error_msg = result.get('error', 'Unknown error')
+                logger.error(f"Failed to create OpenAI resources for company: {company.name} (ID: {company.id}) - Error: {error_msg}")
+                
+                # Still proceed with company creation, but show error message
+                if 'invalid_api_key' in error_msg or 'API key' in error_msg:
+                    messages.error(request, "Company created, but AI assistant setup failed due to API key issues. Please contact support.")
+                else:
+                    messages.warning(request, "Company created, but AI assistant setup encountered an issue. Some AI features may not be available.")
             
             # Create default project and data silo in the background using Celery
             create_default_project_and_silo.delay(company.id, request.user.id)
             logger.info(f"Triggered default project and silo creation for company: {company.name} (ID: {company.id})")
             
+            # Show success message
             messages.success(request, f'Company "{company.name}" has been set up successfully!')
             return redirect('dashboard')
     else:
@@ -72,18 +98,41 @@ def create_company(request):
             company = form.save(commit=False)
             company.created_by = request.user
             company.save()
+            logger.info(f"Created company: {company.name} (ID: {company.id})")
             
             # Create the relation between user and company
             UserCompanyRelation.objects.create(
                 user=request.user,
                 company=company,
-                role='admin'  # Creator is always an admin
+                role='owner'  # Make the creator the owner
             )
+            logger.info(f"Created user-company relation for user {request.user.email} and company {company.name}")
+            
+            # Set up OpenAI resources for the company
+            logger.info(f"Setting up OpenAI resources for company {company.name}")
+            openai_service = CompanyOpenAIService()
+            result = openai_service.setup_company_ai(company)
+            
+            if result['success']:
+                company.openai_assistant_id = result['assistant_id']
+                company.openai_vector_store_id = result['vector_store_id']
+                company.save()
+                logger.info(f"Created and saved OpenAI resources for company: {company.name} - Assistant ID: {company.openai_assistant_id}, Vector Store ID: {company.openai_vector_store_id}")
+            else:
+                error_msg = result.get('error', 'Unknown error')
+                logger.error(f"Failed to create OpenAI resources for company: {company.name} (ID: {company.id}) - Error: {error_msg}")
+                
+                # Still proceed with company creation, but show error message
+                if 'invalid_api_key' in error_msg or 'API key' in error_msg:
+                    messages.error(request, "Company created, but AI assistant setup failed due to API key issues. Please contact support.")
+                else:
+                    messages.warning(request, "Company created, but AI assistant setup encountered an issue. Some AI features may not be available.")
             
             # Create default project and data silo in the background using Celery
             create_default_project_and_silo.delay(company.id, request.user.id)
             logger.info(f"Triggered default project and silo creation for company: {company.name} (ID: {company.id})")
             
+            # Show success message
             messages.success(request, f'Company "{company.name}" created successfully!')
             return redirect('dashboard')
     else:
@@ -170,4 +219,54 @@ def setup_company_email(request):
         'form': form,
         'company': company,
         'email_domain': email_domain,
+    })
+
+@login_required
+def company_team(request):
+    """
+    View for managing team members for a company
+    """
+    # Get the user's company
+    company = None
+    if hasattr(request.user, 'profile') and request.user.profile and hasattr(request.user.profile, 'company'):
+        company = request.user.profile.company
+    
+    if not company:
+        # Try to get it from company relations
+        relation = request.user.company_relations.first()
+        if relation:
+            company = relation.company
+    
+    if not company:
+        messages.error(request, "You need to have a company before accessing the team page.")
+        return redirect('dashboard')
+    
+    # Get user's role in this company
+    user_relation = UserCompanyRelation.objects.filter(user=request.user, company=company).first()
+    user_role = user_relation.role if user_relation else None
+    
+    # Check if user has access to view team
+    if not user_role:
+        messages.error(request, "You don't have access to this company team.")
+        return redirect('dashboard')
+    
+    # Get all team members (users with company relation)
+    team_members = UserCompanyRelation.objects.filter(company=company).select_related('user')
+    
+    # Get pending invitations for this company
+    pending_invitations = Invitation.objects.filter(
+        company=company,
+        invitation_type='company',
+        status='pending'
+    )
+    
+    # Check if user has admin rights (can invite others)
+    can_invite = user_role in ['owner', 'admin']
+    
+    return render(request, 'companies/company_team.html', {
+        'company': company,
+        'team_members': team_members,
+        'pending_invitations': pending_invitations,
+        'user_role': user_role,
+        'can_invite': can_invite,
     })

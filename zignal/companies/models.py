@@ -15,6 +15,12 @@ class Company(models.Model):
     company_email = models.CharField(max_length=255, blank=True, null=True, unique=True, 
                                    help_text="Unique email prefix for receiving emails (e.g., 'acme' will become acme@yourservice.com)")
     
+    # OpenAI integration fields
+    openai_assistant_id = models.CharField(max_length=255, blank=True, null=True,
+                                         help_text="OpenAI Assistant ID for this company")
+    openai_vector_store_id = models.CharField(max_length=255, blank=True, null=True,
+                                            help_text="OpenAI Vector Store ID for this company")
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

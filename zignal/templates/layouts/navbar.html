@@ -65,28 +65,22 @@
         </div>
       </div>
       
+      {% if request.resolver_match.url_name != 'dashboard' %}
       <a
-        href="{% url 'chat' %}"
+        href="{% url 'dashboard' %}"
         class="text-white bg-blue-500 hover:bg-blue-600 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 focus:outline-none"
-        >AI Chat</a
-      >
-      {% if user.user_type == 'portfolio_manager' %}
-      <a
-        href="{% url 'portfolio_manager_chat' %}"
-        class="text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 focus:outline-none"
-        >Portfolio Chat</a
-      >
-      <a
-        href="{% url 'agents:meeting_list' %}"
-        class="text-gray-600 hover:text-gray-900 py-2 rounded-md font-medium"
-        >Meetings</a
+        >Dashboard</a
       >
       {% endif %}
+
+      {% if request.resolver_match.url_name != 'profile_view' %}
       <a
         href="{% url 'profiles:profile_view' %}"
         class="text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 sm:mr-2 dark:bg-purple-600 dark:hover:bg-purple-700 focus:outline-none dark:focus:ring-purple-800"
-        >My Page</a
+        >My Profile</a
       >
+      {% endif %}
+
       <a
         href="{% url 'account_logout' %}"
         class="text-gray-800 hover:text-purple-700 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 lg:mr-0"

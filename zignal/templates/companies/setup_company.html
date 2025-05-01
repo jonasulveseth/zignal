@@ -7,7 +7,7 @@
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
   <div class="sm:mx-auto sm:w-full sm:max-w-md">
-    <img class="mx-auto h-12 w-auto" src="{% static 'img/logo.svg' %}" alt="Zignal Logo">
+    
     <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
       Set up your company
     </h2>
@@ -20,7 +20,7 @@
 
   <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
     <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-      <form class="space-y-6" action="{% url 'setup_company' %}" method="POST">
+      <form class="space-y-6" action="{% url 'companies:setup_company' %}" method="POST">
         {% csrf_token %}
         
         {% if form.non_field_errors %}
