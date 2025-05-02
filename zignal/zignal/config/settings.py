@@ -17,6 +17,14 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# Apply Redis SSL patch first (before any Redis connections are made)
+try:
+    # Only in production (Heroku)
+    if os.environ.get('REDIS_URL', '').startswith('rediss://'):
+        from zignal.redis_ssl_patch import *
+except ImportError:
+    pass
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -130,6 +138,9 @@ CACHES = {
         'LOCATION': os.getenv('REDIS_URL', 'redis://localhost:6379/0'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'ssl_cert_reqs': None,  # Disable SSL certificate verification
+            },
         }
     }
 }
@@ -142,6 +153,14 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+
+# Celery Redis SSL settings (when using secure Redis)
+CELERY_REDIS_BACKEND_USE_SSL = {
+    'ssl_cert_reqs': None  # Disable certificate verification
+}
+CELERY_BROKER_USE_SSL = {
+    'ssl_cert_reqs': None  # Disable certificate verification
+}
 
 # Email processing settings
 PROCESS_EMAILS_SYNC = os.getenv('PROCESS_EMAILS_SYNC', 'False') == 'True'
@@ -293,6 +312,7 @@ CHANNEL_LAYERS = {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
             'hosts': [os.getenv('REDIS_URL', 'redis://localhost:6379/3')],
+            'ssl_cert_reqs': None,  # Disable SSL certificate verification
         },
     },
 }
