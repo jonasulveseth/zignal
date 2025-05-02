@@ -139,6 +139,7 @@ CACHES = {
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             'CONNECTION_POOL_KWARGS': {
+                'ssl_check_hostname': False,  # Must be set before ssl_cert_reqs
                 'ssl_cert_reqs': None,  # Disable SSL certificate verification
             },
         }
@@ -156,9 +157,11 @@ CELERY_TIMEZONE = 'UTC'
 
 # Celery Redis SSL settings (when using secure Redis)
 CELERY_REDIS_BACKEND_USE_SSL = {
+    'ssl_check_hostname': False,  # Must be set before ssl_cert_reqs
     'ssl_cert_reqs': None  # Disable certificate verification
 }
 CELERY_BROKER_USE_SSL = {
+    'ssl_check_hostname': False,  # Must be set before ssl_cert_reqs
     'ssl_cert_reqs': None  # Disable certificate verification
 }
 
@@ -311,8 +314,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [os.getenv('REDIS_URL', 'redis://localhost:6379/3')],
-            'ssl_cert_reqs': None,  # Disable SSL certificate verification
+            'hosts': [{'address': os.getenv('REDIS_URL', 'redis://localhost:6379/3'), 'ssl_check_hostname': False, 'ssl_cert_reqs': None}],
         },
     },
 }
