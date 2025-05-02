@@ -17,14 +17,86 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Import Redis SSL fix settings if on Heroku
-if 'REDIS_URL' in os.environ and os.environ.get('REDIS_URL', '').startswith('rediss://'):
-    try:
-        from .redis_fix import *
-    except ImportError:
-        pass
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-mcc@@y*qg7%42w)mw44s=((ukn@e7$!!*5af1+f7xvtlz(t7i%')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
+
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,mighty-wave-39560-d078d75c03f3.herokuapp.com,zignal.se,www.zignal.se').split(',')
+
+
+# Fix Redis SSL certificate verification issues
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+
+# Update Redis connection settings to disable SSL verification for Heroku Redis
+if REDIS_URL.startswith('rediss://'):
+    # For SSL connections to Redis
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'CONNECTION_POOL_KWARGS': {
+                    'ssl_cert_reqs': None,  # Disables certificate verification
+                },
+            }
+        }
+    }
+
+    # Channel layers with SSL options for Redis
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [{'address': REDIS_URL, 'ssl_cert_reqs': None}],
+            },
+        },
+    }
+
+    # Celery settings with SSL options for Redis
+    CELERY_BROKER_URL = REDIS_URL
+    CELERY_RESULT_BACKEND = REDIS_URL
+    CELERY_REDIS_BACKEND_USE_SSL = {
+        'ssl_cert_reqs': None,
+    }
+    CELERY_BROKER_USE_SSL = {
+        'ssl_cert_reqs': None, 
+    }
+else:
+    # Default Redis settings without SSL
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
+        }
+    }
+
+    # Channel Layers configuration
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [REDIS_URL],
+            },
+        },
+    }
+
+    # Celery broker settings
+    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1')
+    CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2')
+
+
+# Application definition
 
 # ... existing code ... 
