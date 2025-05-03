@@ -194,12 +194,15 @@ def process_file_for_vector_store(file_id):
         
         # Try to get company
         company = None
-        if data_file.company:
+        if hasattr(data_file, 'company') and data_file.company:
             company = data_file.company
-        elif data_file.project and data_file.project.company:
+        elif hasattr(data_file, 'project') and data_file.project and data_file.project.company:
             company = data_file.project.company
-        elif data_file.data_silo and data_file.data_silo.company:
-            company = data_file.data_silo.company
+        elif hasattr(data_file, 'data_silo') and data_file.data_silo:
+            if data_file.data_silo.company:
+                company = data_file.data_silo.company
+            elif data_file.data_silo.project and data_file.data_silo.project.company:
+                company = data_file.data_silo.project.company
         
         if not company:
             logger.error(f"No company found for file {file_id}")
@@ -212,25 +215,48 @@ def process_file_for_vector_store(file_id):
         
         # Check if company has a vector store
         if not company.openai_vector_store_id:
-            logger.error(f"Company {company.name} has no vector store ID")
-            data_file.vector_store_status = 'failed'
-            data_file.save(update_fields=['vector_store_status'])
-            return {
-                "success": False,
-                "error": "Company has no vector store"
-            }
+            logger.warning(f"Company {company.name} has no vector store ID. Creating one...")
+            
+            try:
+                # Create vector store if not exists
+                from companies.services.openai_service import CompanyOpenAIService
+                openai_service = CompanyOpenAIService()
+                setup_result = openai_service.setup_company_ai(company)
+                
+                if setup_result.get('success') and setup_result.get('vector_store_id'):
+                    company.openai_vector_store_id = setup_result.get('vector_store_id')
+                    if not company.openai_assistant_id and setup_result.get('assistant_id'):
+                        company.openai_assistant_id = setup_result.get('assistant_id')
+                    company.save(update_fields=['openai_vector_store_id', 'openai_assistant_id'])
+                    logger.info(f"Created vector store for company: {company.openai_vector_store_id}")
+                else:
+                    logger.error(f"Failed to create vector store: {setup_result.get('error')}")
+                    data_file.vector_store_status = 'failed'
+                    data_file.save(update_fields=['vector_store_status'])
+                    return {
+                        "success": False,
+                        "error": f"Failed to create vector store: {setup_result.get('error')}"
+                    }
+            except Exception as e:
+                logger.error(f"Error creating vector store: {str(e)}")
+                data_file.vector_store_status = 'failed'
+                data_file.save(update_fields=['vector_store_status'])
+                return {
+                    "success": False,
+                    "error": f"Error creating vector store: {str(e)}"
+                }
         
         # Import OpenAI service
         try:
             from companies.services.openai_service import CompanyOpenAIService
             openai_service = CompanyOpenAIService()
-        except ImportError:
-            logger.error("OpenAI service not available")
+        except ImportError as e:
+            logger.error(f"OpenAI service not available: {str(e)}")
             data_file.vector_store_status = 'failed'
             data_file.save(update_fields=['vector_store_status'])
             return {
                 "success": False,
-                "error": "OpenAI service not available"
+                "error": f"OpenAI service not available: {str(e)}"
             }
         
         # Process the file
@@ -244,6 +270,27 @@ def process_file_for_vector_store(file_id):
             return {
                 "success": False,
                 "error": "File not found on disk"
+            }
+        
+        # Check file size limit (OpenAI has 512MB limit)
+        max_file_size = 512 * 1024 * 1024  # 512MB in bytes
+        if os.path.getsize(file_path) > max_file_size:
+            logger.error(f"File too large: {file_path} ({os.path.getsize(file_path)} bytes)")
+            data_file.vector_store_status = 'failed'
+            data_file.save(update_fields=['vector_store_status'])
+            return {
+                "success": False,
+                "error": "File too large for OpenAI API (max 512MB)"
+            }
+            
+        # Check if OpenAI API key is configured
+        if not settings.OPENAI_API_KEY or len(settings.OPENAI_API_KEY) < 10:
+            logger.error("OpenAI API key not configured properly")
+            data_file.vector_store_status = 'failed'
+            data_file.save(update_fields=['vector_store_status'])
+            return {
+                "success": False,
+                "error": "OpenAI API key not configured"
             }
         
         # Upload file to vector store

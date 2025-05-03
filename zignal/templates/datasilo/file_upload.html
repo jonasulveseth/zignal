@@ -292,8 +292,9 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
     
-    // Handle form submission with progress tracking
+    // Override the default form submit event
     uploadForm.addEventListener('submit', function(e) {
+      // Always prevent default form submission
       e.preventDefault();
       
       if (fileInput.files.length === 0) {
@@ -308,9 +309,10 @@
       // Create FormData and append form fields
       const formData = new FormData(uploadForm);
       
-      // Create and configure XMLHttpRequest
+      // Add a custom header to identify AJAX requests
       const xhr = new XMLHttpRequest();
       xhr.open('POST', uploadForm.action || window.location.href, true);
+      xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
       
       // Set up progress tracking
       xhr.upload.addEventListener('progress', function(e) {

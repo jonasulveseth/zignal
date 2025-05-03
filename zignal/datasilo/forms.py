@@ -110,6 +110,16 @@ class DataFileForm(forms.ModelForm):
         # Set user if provided and not already set - use uploaded_by, not created_by
         if self.user and not instance.uploaded_by:
             instance.uploaded_by = self.user
+        
+        # Set project and company from data_silo if they're not already set
+        if not instance.project and self.data_silo and self.data_silo.project:
+            instance.project = self.data_silo.project
+            
+        if not instance.company and self.data_silo:
+            if self.data_silo.company:
+                instance.company = self.data_silo.company
+            elif self.data_silo.project and self.data_silo.project.company:
+                instance.company = self.data_silo.project.company
             
         # Auto-generate name from file if name is empty
         if not instance.name and instance.file:
