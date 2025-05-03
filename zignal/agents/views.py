@@ -41,7 +41,7 @@ def agent_list(request):
                 name=data.get('name', 'New Agent'),
                 description=data.get('description', ''),
                 agent_type=data.get('agent_type', 'chat'),
-                model=data.get('model', 'gpt-4o'),
+                model=data.get('model', 'gpt-4o-mini'),
                 temperature=data.get('temperature', 0.7),
                 max_tokens=data.get('max_tokens', 1000),
                 system_prompt=data.get('system_prompt', ''),

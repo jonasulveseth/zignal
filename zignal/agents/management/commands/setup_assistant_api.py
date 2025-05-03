@@ -29,7 +29,7 @@ class Command(BaseCommand):
                 name='General Assistant',
                 description='A general purpose AI assistant to help with various tasks.',
                 agent_type='chat',
-                model='gpt-4o',
+                model='gpt-4o-mini',
                 temperature=0.7,
                 max_tokens=1000,
                 system_prompt='You are a helpful AI assistant for Zignal. Your role is to assist users with their queries and provide helpful information.',
