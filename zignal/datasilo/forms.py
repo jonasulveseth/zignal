@@ -103,8 +103,8 @@ class DataFileForm(forms.ModelForm):
         # Get or create the model instance
         instance = super().save(False)
         
-        # Set the data silo relationship if not already set
-        if self.data_silo and not instance.data_silo:
+        # Ensure data_silo is assigned - this is the critical part
+        if self.data_silo:
             instance.data_silo = self.data_silo
             
         # Set user if provided and not already set
@@ -117,6 +117,10 @@ class DataFileForm(forms.ModelForm):
             import os
             filename = os.path.basename(instance.file.name)
             instance.name = os.path.splitext(filename)[0]
+            
+        # Make sure data_silo is set before saving - validation
+        if not instance.data_silo:
+            raise ValueError("DataFile has no data_silo")
             
         # Save the instance if commit is True
         if commit:
