@@ -75,11 +75,12 @@ class DataFileForm(forms.ModelForm):
         if self.data_silo:
             instance.data_silo = self.data_silo
             
-            # Set project and company from the data silo
-            if self.data_silo.project:
-                instance.project = self.data_silo.project
-            if self.data_silo.company:
-                instance.company = self.data_silo.company
+            # Let the model's save method handle these relationships
+            # to prevent potential duplicate saves
+            # if self.data_silo.project:
+            #     instance.project = self.data_silo.project
+            # if self.data_silo.company:
+            #     instance.company = self.data_silo.company
         
         if self.user:
             instance.uploaded_by = self.user

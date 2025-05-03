@@ -2,8 +2,9 @@ from celery import shared_task
 import logging
 from django.utils import timezone
 from projects.models import Project, UserProjectRelation
-from datasilo.models import DataSilo
+from datasilo.models import DataSilo, DataFile
 import time
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,6 @@ def create_default_project_and_silo(company_id, user_id):
         logger.error(f"Traceback: {traceback.format_exc()}")
         
         # Log environment variables for debugging (only in non-production)
-        import os
         from django.conf import settings
         if settings.DEBUG:
             redis_url = os.environ.get('REDIS_URL', 'not_set')
@@ -116,6 +116,149 @@ def create_default_project_and_silo(company_id, user_id):
             logger.debug(f"CELERY_BROKER_URL: {celery_broker[:10]}***")
             logger.debug(f"CELERY_RESULT_BACKEND: {celery_backend[:10]}***")
         
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@shared_task
+def process_file_for_vector_store(file_id):
+    """
+    Process a file for the OpenAI Vector Store
+    
+    Args:
+        file_id (int): ID of the DataFile to process
+        
+    Returns:
+        dict: Result of the processing
+    """
+    from datasilo.models import DataFile
+    from companies.models import Company
+    from django.conf import settings
+    from django.utils import timezone
+    import os
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Processing file for vector store: {file_id}")
+        
+        # Get the file
+        data_file = DataFile.objects.get(id=file_id)
+        
+        # Check if already processed
+        if data_file.vector_store_file_id:
+            logger.info(f"File already has a vector store ID: {data_file.vector_store_file_id}")
+            return {
+                "success": True,
+                "message": "File already processed",
+                "file_id": data_file.vector_store_file_id
+            }
+        
+        # Update status
+        data_file.vector_store_status = 'processing'
+        data_file.save(update_fields=['vector_store_status'])
+        
+        # Try to get company
+        company = None
+        if data_file.company:
+            company = data_file.company
+        elif data_file.project and data_file.project.company:
+            company = data_file.project.company
+        elif data_file.data_silo and data_file.data_silo.company:
+            company = data_file.data_silo.company
+        
+        if not company:
+            logger.error(f"No company found for file {file_id}")
+            data_file.vector_store_status = 'failed'
+            data_file.save(update_fields=['vector_store_status'])
+            return {
+                "success": False,
+                "error": "No company found for file"
+            }
+        
+        # Check if company has a vector store
+        if not company.openai_vector_store_id:
+            logger.error(f"Company {company.name} has no vector store ID")
+            data_file.vector_store_status = 'failed'
+            data_file.save(update_fields=['vector_store_status'])
+            return {
+                "success": False,
+                "error": "Company has no vector store"
+            }
+        
+        # Import OpenAI service
+        try:
+            from companies.services.openai_service import CompanyOpenAIService
+            openai_service = CompanyOpenAIService()
+        except ImportError:
+            logger.error("OpenAI service not available")
+            data_file.vector_store_status = 'failed'
+            data_file.save(update_fields=['vector_store_status'])
+            return {
+                "success": False,
+                "error": "OpenAI service not available"
+            }
+        
+        # Process the file
+        file_path = data_file.file.path
+        
+        # Check if file exists and is accessible
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            data_file.vector_store_status = 'failed'
+            data_file.save(update_fields=['vector_store_status'])
+            return {
+                "success": False,
+                "error": "File not found on disk"
+            }
+        
+        # Upload file to vector store
+        result = openai_service.add_file_to_vector_store(
+            company,
+            file_path,
+            data_file.name
+        )
+        
+        if result.get('success'):
+            # Update file with vector store ID
+            data_file.vector_store_file_id = result.get('file_id')
+            data_file.vector_store_status = 'processed'
+            data_file.vector_store_processed_at = timezone.now()
+            data_file.save(update_fields=[
+                'vector_store_file_id', 
+                'vector_store_status', 
+                'vector_store_processed_at'
+            ])
+            logger.info(f"File {file_id} added to vector store with ID: {result.get('file_id')}")
+            return {
+                "success": True,
+                "file_id": result.get('file_id')
+            }
+        else:
+            # Update file with error
+            data_file.vector_store_status = 'failed'
+            data_file.save(update_fields=['vector_store_status'])
+            logger.error(f"Error adding file to vector store: {result.get('error')}")
+            return {
+                "success": False,
+                "error": result.get('error')
+            }
+            
+    except Exception as e:
+        import traceback
+        logger.error(f"Error processing file for vector store: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        
+        # Try to update file status if possible
+        try:
+            data_file = DataFile.objects.get(id=file_id)
+            data_file.vector_store_status = 'failed'
+            data_file.save(update_fields=['vector_store_status'])
+        except:
+            pass
+            
         return {
             "success": False,
             "error": str(e)

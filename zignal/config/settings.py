@@ -35,23 +35,33 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,mighty-wave-3956
 # Fix Redis SSL certificate verification issues
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 
-# Update Redis connection settings to disable SSL verification for Heroku Redis
-if REDIS_URL.startswith('rediss://'):
-    # Fix all redis URLs to use rediss:// in production
-    # This ensures consistency across all Redis connections
-    broker_url = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1')
-    result_backend = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2')
+# Force rediss:// protocol for all Redis URLs in production (Heroku)
+# This ensures all Redis URLs use the same SSL-enabled scheme
+if not DEBUG and REDIS_URL.startswith('rediss://'):
+    # We're in production with SSL Redis
+    # Ensure all Redis URLs consistently use rediss:// scheme
+    def ensure_rediss_scheme(url):
+        """Convert redis:// URLs to rediss:// if needed"""
+        return url.replace('redis://', 'rediss://', 1) if url and url.startswith('redis://') else url
     
-    # Convert URLs to rediss:// if needed
-    if broker_url.startswith('redis://'):
-        CELERY_BROKER_URL = broker_url.replace('redis://', 'rediss://', 1)
-    else:
-        CELERY_BROKER_URL = broker_url
-        
-    if result_backend.startswith('redis://'):
-        CELERY_RESULT_BACKEND = result_backend.replace('redis://', 'rediss://', 1)
-    else:
-        CELERY_RESULT_BACKEND = result_backend
+    # Convert all our Redis URLs
+    if 'REDIS_URL' in os.environ:
+        os.environ['REDIS_URL'] = ensure_rediss_scheme(os.environ['REDIS_URL'])
+    
+    if 'CELERY_BROKER_URL' in os.environ:
+        os.environ['CELERY_BROKER_URL'] = ensure_rediss_scheme(os.environ['CELERY_BROKER_URL'])
+    
+    if 'CELERY_RESULT_BACKEND' in os.environ:
+        os.environ['CELERY_RESULT_BACKEND'] = ensure_rediss_scheme(os.environ['CELERY_RESULT_BACKEND'])
+    
+    # Update local variables too
+    REDIS_URL = os.environ.get('REDIS_URL')
+    broker_url = os.environ.get('CELERY_BROKER_URL', REDIS_URL)
+    result_backend = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL)
+    
+    # Update settings with corrected URLs
+    CELERY_BROKER_URL = broker_url
+    CELERY_RESULT_BACKEND = result_backend
     
     # For SSL connections to Redis
     CACHES = {

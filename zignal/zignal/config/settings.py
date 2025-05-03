@@ -131,13 +131,26 @@ redis_main_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 # Check if we're in an environment with SSL Redis (Heroku production)
 use_redis_ssl = redis_main_url.startswith('rediss://')
 
+# Make sure environment variables are consistent in production
+if use_redis_ssl and not DEBUG:
+    # In production with SSL Redis - force environment variables to use rediss://
+    def ensure_rediss_scheme(url):
+        """Convert redis:// URLs to rediss:// if needed"""
+        return url.replace('redis://', 'rediss://', 1) if url and url.startswith('redis://') else url
+    
+    # Update environment variables directly (important for Celery worker processes)
+    if 'REDIS_URL' in os.environ and os.environ['REDIS_URL'].startswith('redis://'):
+        os.environ['REDIS_URL'] = ensure_rediss_scheme(os.environ['REDIS_URL'])
+        
+    if 'CELERY_BROKER_URL' in os.environ and os.environ['CELERY_BROKER_URL'].startswith('redis://'):
+        os.environ['CELERY_BROKER_URL'] = ensure_rediss_scheme(os.environ['CELERY_BROKER_URL'])
+        
+    if 'CELERY_RESULT_BACKEND' in os.environ and os.environ['CELERY_RESULT_BACKEND'].startswith('redis://'):
+        os.environ['CELERY_RESULT_BACKEND'] = ensure_rediss_scheme(os.environ['CELERY_RESULT_BACKEND'])
+
 # Set Redis URLs with consistent scheme
 if use_redis_ssl:
     # In production with SSL - ensure all URLs use rediss:// scheme
-    def ensure_rediss_scheme(url):
-        """Convert redis:// URLs to rediss:// if needed"""
-        return url.replace('redis://', 'rediss://', 1) if url.startswith('redis://') else url
-    
     REDIS_URL = ensure_rediss_scheme(redis_main_url)
     CELERY_BROKER_URL = ensure_rediss_scheme(os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1'))
     CELERY_RESULT_BACKEND = ensure_rediss_scheme(os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2'))

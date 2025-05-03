@@ -159,6 +159,20 @@ def file_upload(request, slug):
                 data_file.size = data_file.file.size
                 data_file.save()
                 
+                # Trigger file processing for vector store
+                from django.conf import settings
+                try:
+                    # Check if Celery tasks for vector store processing exist
+                    from core.tasks import process_file_for_vector_store
+                    # Schedule the task
+                    process_file_for_vector_store.delay(data_file.id)
+                    print(f"Scheduled vector store processing for file ID: {data_file.id}")
+                except (ImportError, AttributeError) as e:
+                    print(f"Vector store processing not available: {str(e)}")
+                    # Update status to indicate processing wasn't triggered
+                    data_file.vector_store_status = 'failed'
+                    data_file.save(update_fields=['vector_store_status'])
+                
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                     # Return JSON response for AJAX requests
                     return JsonResponse({
