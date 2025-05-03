@@ -162,6 +162,17 @@ def file_upload(request, slug):
                 # Trigger file processing for vector store
                 from django.conf import settings
                 try:
+                    # Configure Redis SSL settings for Celery task
+                    import os
+                    import redis
+                    
+                    # Check if we're in a production environment with SSL Redis
+                    redis_url = os.environ.get('REDIS_URL', '')
+                    if redis_url.startswith('rediss://'):
+                        # Configure Celery to handle SSL properly
+                        os.environ['CELERY_REDIS_BACKEND_USE_SSL'] = 'True'
+                        os.environ['CELERY_BROKER_USE_SSL'] = 'True'
+                    
                     # Check if Celery tasks for vector store processing exist
                     from core.tasks import process_file_for_vector_store
                     # Schedule the task
