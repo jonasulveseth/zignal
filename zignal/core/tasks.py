@@ -100,7 +100,22 @@ def create_default_project_and_silo(company_id, user_id):
         }
         
     except Exception as e:
+        # Log detailed error info for easier debugging
+        import traceback
         logger.error(f"Error creating default project and silo: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        
+        # Log environment variables for debugging (only in non-production)
+        import os
+        from django.conf import settings
+        if settings.DEBUG:
+            redis_url = os.environ.get('REDIS_URL', 'not_set')
+            celery_broker = os.environ.get('CELERY_BROKER_URL', 'not_set')
+            celery_backend = os.environ.get('CELERY_RESULT_BACKEND', 'not_set')
+            logger.debug(f"REDIS_URL: {redis_url[:10]}***")
+            logger.debug(f"CELERY_BROKER_URL: {celery_broker[:10]}***")
+            logger.debug(f"CELERY_RESULT_BACKEND: {celery_backend[:10]}***")
+        
         return {
             "success": False,
             "error": str(e)

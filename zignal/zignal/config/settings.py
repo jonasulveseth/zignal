@@ -125,24 +125,38 @@ DATABASES['default'].update(db_from_env)
 
 # Cache and Redis settings
 
-# Properly handle Redis URLs based on environment
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+# Fix Redis URL scheme inconsistencies between local and production environments
+redis_main_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 
-# Convert Redis URLs to use rediss:// protocol when needed (Heroku production)
-if REDIS_URL.startswith('rediss://'):
-    # Running in environment with SSL Redis (Heroku)
-    redis_ssl_mode = True
+# Check if we're in an environment with SSL Redis (Heroku production)
+use_redis_ssl = redis_main_url.startswith('rediss://')
+
+# Set Redis URLs with consistent scheme
+if use_redis_ssl:
+    # In production with SSL - ensure all URLs use rediss:// scheme
+    def ensure_rediss_scheme(url):
+        """Convert redis:// URLs to rediss:// if needed"""
+        return url.replace('redis://', 'rediss://', 1) if url.startswith('redis://') else url
     
-    # Make sure all Redis URLs use rediss:// protocol for consistency
-    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1').replace('redis://', 'rediss://', 1)
-    CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2').replace('redis://', 'rediss://', 1)
-    CHANNEL_REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/3').replace('redis://', 'rediss://', 1)
+    REDIS_URL = ensure_rediss_scheme(redis_main_url)
+    CELERY_BROKER_URL = ensure_rediss_scheme(os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1'))
+    CELERY_RESULT_BACKEND = ensure_rediss_scheme(os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2'))
+    CHANNEL_REDIS_URL = ensure_rediss_scheme(redis_main_url.replace('0', '3', 1))
+    
+    # SSL configuration parameters for Redis
+    redis_ssl_config = {
+        'ssl_cert_reqs': None,  # Disable certificate verification
+        'ssl_check_hostname': False,  # Disable hostname verification
+    }
 else:
-    # Local development (no SSL)
-    redis_ssl_mode = False
+    # Local development without SSL
+    REDIS_URL = redis_main_url
     CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1')
     CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2')
-    CHANNEL_REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/3')
+    CHANNEL_REDIS_URL = redis_main_url.replace('0', '3', 1)
+    
+    # Empty SSL config for local development
+    redis_ssl_config = {}
 
 # Redis Cache Configuration
 CACHES = {
@@ -151,10 +165,7 @@ CACHES = {
         'LOCATION': REDIS_URL,
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'CONNECTION_POOL_KWARGS': {} if not redis_ssl_mode else {
-                'ssl_check_hostname': False,
-                'ssl_cert_reqs': None,
-            },
+            'CONNECTION_POOL_KWARGS': redis_ssl_config,
         }
     }
 }
@@ -165,16 +176,10 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
-# Celery Redis SSL settings (only when using SSL)
-if redis_ssl_mode:
-    CELERY_REDIS_BACKEND_USE_SSL = {
-        'ssl_check_hostname': False,
-        'ssl_cert_reqs': None,
-    }
-    CELERY_BROKER_USE_SSL = {
-        'ssl_check_hostname': False,
-        'ssl_cert_reqs': None,
-    }
+# Celery Redis SSL settings
+if use_redis_ssl:
+    CELERY_REDIS_BACKEND_USE_SSL = redis_ssl_config
+    CELERY_BROKER_USE_SSL = redis_ssl_config
 
 # Email processing settings
 PROCESS_EMAILS_SYNC = os.getenv('PROCESS_EMAILS_SYNC', 'False') == 'True'
@@ -328,10 +333,7 @@ CHANNEL_LAYERS = {
             'hosts': [
                 {
                     'address': CHANNEL_REDIS_URL,
-                    **(
-                        {'ssl_check_hostname': False, 'ssl_cert_reqs': None} 
-                        if redis_ssl_mode else {}
-                    )
+                    **redis_ssl_config
                 }
             ],
         },

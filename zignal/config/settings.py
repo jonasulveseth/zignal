@@ -37,6 +37,22 @@ REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 
 # Update Redis connection settings to disable SSL verification for Heroku Redis
 if REDIS_URL.startswith('rediss://'):
+    # Fix all redis URLs to use rediss:// in production
+    # This ensures consistency across all Redis connections
+    broker_url = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1')
+    result_backend = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2')
+    
+    # Convert URLs to rediss:// if needed
+    if broker_url.startswith('redis://'):
+        CELERY_BROKER_URL = broker_url.replace('redis://', 'rediss://', 1)
+    else:
+        CELERY_BROKER_URL = broker_url
+        
+    if result_backend.startswith('redis://'):
+        CELERY_RESULT_BACKEND = result_backend.replace('redis://', 'rediss://', 1)
+    else:
+        CELERY_RESULT_BACKEND = result_backend
+    
     # For SSL connections to Redis
     CACHES = {
         'default': {
@@ -46,6 +62,7 @@ if REDIS_URL.startswith('rediss://'):
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
                 'CONNECTION_POOL_KWARGS': {
                     'ssl_cert_reqs': None,  # Disables certificate verification
+                    'ssl_check_hostname': False,  # Disables hostname checking
                 },
             }
         }
@@ -56,19 +73,19 @@ if REDIS_URL.startswith('rediss://'):
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
             'CONFIG': {
-                'hosts': [{'address': REDIS_URL, 'ssl_cert_reqs': None}],
+                'hosts': [{'address': REDIS_URL, 'ssl_cert_reqs': None, 'ssl_check_hostname': False}],
             },
         },
     }
 
-    # Celery settings with SSL options for Redis
-    CELERY_BROKER_URL = REDIS_URL
-    CELERY_RESULT_BACKEND = REDIS_URL
+    # Celery Redis SSL settings
     CELERY_REDIS_BACKEND_USE_SSL = {
         'ssl_cert_reqs': None,
+        'ssl_check_hostname': False,
     }
     CELERY_BROKER_USE_SSL = {
-        'ssl_cert_reqs': None, 
+        'ssl_cert_reqs': None,
+        'ssl_check_hostname': False,
     }
 else:
     # Default Redis settings without SSL
