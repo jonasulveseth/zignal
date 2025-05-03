@@ -107,9 +107,9 @@ class DataFileForm(forms.ModelForm):
         if self.data_silo:
             instance.data_silo = self.data_silo
             
-        # Set user if provided and not already set
-        if self.user and not instance.created_by:
-            instance.created_by = self.user
+        # Set user if provided and not already set - use uploaded_by, not created_by
+        if self.user and not instance.uploaded_by:
+            instance.uploaded_by = self.user
             
         # Auto-generate name from file if name is empty
         if not instance.name and instance.file:
