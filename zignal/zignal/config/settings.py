@@ -211,5 +211,143 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
 OPENAI_EMBEDDINGS_MODEL = os.getenv('OPENAI_EMBEDDINGS_MODEL', 'text-embedding-ada-002')
 
+# Meeting BaaS API Configuration
+MEETINGBAAS_API_KEY = os.getenv('MEETINGBAAS_API_KEY', '')
+MEETINGBAAS_API_URL = os.getenv('MEETINGBAAS_API_URL', 'https://api.meetingbaas.com/v1')
+GENERATE_MEETING_SUMMARIES = os.getenv('GENERATE_MEETING_SUMMARIES', 'True') == 'True'
+
+# Host URL for webhooks in production
+HOST_URL = os.getenv('HOST_URL', 'http://localhost:8000')
+if DEBUG:
+    # For local development with ngrok
+    NGROK_URL = os.getenv('NGROK_URL', '')
+    if NGROK_URL:
+        HOST_URL = NGROK_URL
+
 # ASGI application path
 ASGI_APPLICATION = 'zignal.routing.application'
+
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Simplified static file serving for production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Redis Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': redis_main_url,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': REDIS_SSL_SETTINGS if redis_ssl else {},
+        }
+    }
+}
+
+# Celery settings
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+# Email processing settings
+PROCESS_EMAILS_SYNC = os.getenv('PROCESS_EMAILS_SYNC', 'False') == 'True'
+
+# Auth settings
+AUTH_USER_MODEL = 'users.User'
+
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    # Django default backend
+    'django.contrib.auth.backends.ModelBackend',
+    # django-allauth backend
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# django-allauth settings
+SITE_ID = 1
+
+# New django-allauth settings (recommended)
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*', 'username']
+
+# Legacy django-allauth settings (deprecated, kept for compatibility)
+ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Deprecated: Use ACCOUNT_LOGIN_METHODS instead
+ACCOUNT_EMAIL_REQUIRED = True  # Deprecated: Use ACCOUNT_SIGNUP_FIELDS instead
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = True  # Deprecated: Use ACCOUNT_SIGNUP_FIELDS instead
+ACCOUNT_USERNAME_BLACKLIST = ['admin', 'superuser']
+
+# Additional allauth settings to help with signup issues
+ACCOUNT_USERNAME_MIN_LENGTH = 1
+ACCOUNT_DEBUG = True  # Enable debugging
+
+# Prevent form resubmission issues
+ACCOUNT_FORMS = {
+    'signup': 'allauth.account.forms.SignupForm',
+}
+
+# Use custom adapter for better username handling
+ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
+
+# Other django-allauth settings
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # Changed from 'mandatory' to 'none'
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_SESSION_REMEMBER = True
+ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
+
+# Login/Logout URLs
+LOGIN_URL = 'account_login'
+LOGIN_REDIRECT_URL = 'profiles:profile_view'
+LOGOUT_REDIRECT_URL = 'home'
+
+# Email settings - Development
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email settings - Production with Mailgun
+else:
+    EMAIL_BACKEND = 'anymail.backends.mailgun.EmailBackend'
+    ANYMAIL = {
+        "MAILGUN_API_KEY": os.getenv('MAILGUN_API_KEY', ''),
+        "MAILGUN_SENDER_DOMAIN": os.getenv('MAILGUN_DOMAIN', ''),
+        "MAILGUN_API_URL": os.getenv('MAILGUN_API_URL', 'https://api.mailgun.net/v3'),
+    }
+
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@zignal.com')
+SERVER_EMAIL = os.getenv('SERVER_EMAIL', 'server@zignal.com')
+
+# Password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+# Internationalization
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
