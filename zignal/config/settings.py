@@ -31,6 +31,12 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,mighty-wave-39560-d078d75c03f3.herokuapp.com,zignal.se,www.zignal.se').split(',')
 
+# CSRF settings - trusted origins for cross-domain requests
+CSRF_TRUSTED_ORIGINS = [
+    'https://www.zignal.se',
+    'https://zignal.se', 
+    'https://mighty-wave-39560-d078d75c03f3.herokuapp.com'
+]
 
 # Fix Redis SSL certificate verification issues
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
