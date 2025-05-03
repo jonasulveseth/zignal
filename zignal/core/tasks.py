@@ -6,6 +6,8 @@ from datasilo.models import DataSilo, DataFile
 import time
 import os
 import gc
+import tempfile
+from django.core.files.storage import default_storage
 
 logger = logging.getLogger(__name__)
 
@@ -267,13 +269,75 @@ def process_file_for_vector_store(self, file_id):
                 "error": f"OpenAI service not available: {str(e)}"
             }
         
-        # Process the file
-        file_path = data_file.file.path
+        # Get file path - need different approaches for local vs S3 storage
+        temp_file = None
+        file_path = None
+        
+        try:
+            # First check if we can get path directly (local storage)
+            if hasattr(data_file.file, 'path') and os.path.exists(data_file.file.path):
+                file_path = data_file.file.path
+                logger.info(f"Using local file path: {file_path}")
+            else:
+                # File must be in cloud storage, download to temp file
+                logger.info(f"File not available locally, downloading from storage: {data_file.file.name}")
+                
+                # Check if the file exists in storage
+                if not default_storage.exists(data_file.file.name):
+                    logger.error(f"File not found in storage: {data_file.file.name}")
+                    DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+                    return {
+                        "success": False,
+                        "error": "File not found in storage"
+                    }
+                
+                # Get file size from storage for checking
+                file_size = default_storage.size(data_file.file.name)
+                
+                # Create temp file with the same extension
+                file_ext = os.path.splitext(data_file.file.name)[1]
+                temp_file = tempfile.NamedTemporaryFile(suffix=file_ext, delete=False)
+                temp_file.close()  # Close immediately so we can write to it
+                
+                # Download file from storage to temp location
+                with default_storage.open(data_file.file.name, 'rb') as source_file:
+                    with open(temp_file.name, 'wb') as dest_file:
+                        # Copy in chunks to avoid memory issues
+                        chunk_size = 1024 * 1024  # 1MB chunks
+                        content = source_file.read(chunk_size)
+                        while content:
+                            dest_file.write(content)
+                            content = source_file.read(chunk_size)
+                
+                # Verify file size matches
+                downloaded_size = os.path.getsize(temp_file.name)
+                if downloaded_size != file_size:
+                    logger.error(f"File size mismatch: expected {file_size}, got {downloaded_size}")
+                    os.unlink(temp_file.name)
+                    DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+                    return {
+                        "success": False,
+                        "error": "File download incomplete"
+                    }
+                
+                file_path = temp_file.name
+                logger.info(f"Downloaded file to temporary location: {file_path}")
+        except Exception as e:
+            logger.error(f"Error accessing file: {str(e)}")
+            if temp_file and os.path.exists(temp_file.name):
+                os.unlink(temp_file.name)
+            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+            return {
+                "success": False,
+                "error": f"Error accessing file: {str(e)}"
+            }
         
         # Check if file exists and is accessible
-        if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
+        if not file_path or not os.path.exists(file_path):
+            logger.error(f"File not found at path: {file_path}")
             DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+            if temp_file and os.path.exists(temp_file.name):
+                os.unlink(temp_file.name)
             return {
                 "success": False,
                 "error": "File not found on disk"
@@ -285,6 +349,8 @@ def process_file_for_vector_store(self, file_id):
         if file_size > max_file_size:
             logger.error(f"File too large: {file_path} ({file_size} bytes)")
             DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+            if temp_file and os.path.exists(temp_file.name):
+                os.unlink(temp_file.name)
             return {
                 "success": False,
                 "error": "File too large for OpenAI API (max 512MB)"
@@ -294,6 +360,8 @@ def process_file_for_vector_store(self, file_id):
         if not settings.OPENAI_API_KEY or len(settings.OPENAI_API_KEY) < 10:
             logger.error("OpenAI API key not configured properly")
             DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+            if temp_file and os.path.exists(temp_file.name):
+                os.unlink(temp_file.name)
             return {
                 "success": False,
                 "error": "OpenAI API key not configured"
@@ -302,51 +370,71 @@ def process_file_for_vector_store(self, file_id):
         # Force garbage collection before heavy operation
         gc.collect()
         
-        # Upload file to vector store
-        result = openai_service.add_file_to_vector_store(
-            company,
-            file_path,
-            data_file.name
-        )
-        
-        if result.get('success'):
-            # Update file with vector store ID
-            DataFile.objects.filter(id=file_id).update(
-                vector_store_file_id=result.get('file_id'),
-                vector_store_status='processed',
-                vector_store_processed_at=timezone.now()
+        try:
+            # Upload file to vector store
+            result = openai_service.add_file_to_vector_store(
+                company,
+                file_path,
+                data_file.name
             )
-            logger.info(f"File {file_id} added to vector store with ID: {result.get('file_id')}")
             
-            # Force garbage collection
-            gc.collect()
+            # Clean up temp file if used
+            if temp_file and os.path.exists(temp_file.name):
+                os.unlink(temp_file.name)
+                logger.info(f"Temporary file deleted: {temp_file.name}")
             
-            return {
-                "success": True,
-                "file_id": result.get('file_id')
-            }
-        else:
-            # Update file with error
-            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
-            logger.error(f"Error adding file to vector store: {result.get('error')}")
-            
-            # Check if this is a rate limit error or temporary issue that warrants a retry
-            error_msg = str(result.get('error', '')).lower()
-            if 'rate limit' in error_msg or 'timeout' in error_msg or 'connection' in error_msg:
-                # Exponential backoff for retries
-                retry_in = 60 * (2 ** self.request.retries)  # 60s, 120s, 240s
-                logger.info(f"Temporary error detected. Retrying in {retry_in} seconds...")
-                self.retry(countdown=retry_in)
-            
-            return {
-                "success": False,
-                "error": result.get('error')
-            }
+            if result.get('success'):
+                # Update file with vector store ID
+                DataFile.objects.filter(id=file_id).update(
+                    vector_store_file_id=result.get('file_id'),
+                    vector_store_status='processed',
+                    vector_store_processed_at=timezone.now()
+                )
+                logger.info(f"File {file_id} added to vector store with ID: {result.get('file_id')}")
+                
+                # Force garbage collection
+                gc.collect()
+                
+                return {
+                    "success": True,
+                    "file_id": result.get('file_id')
+                }
+            else:
+                # Update file with error
+                DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+                logger.error(f"Error adding file to vector store: {result.get('error')}")
+                
+                # Check if this is a rate limit error or temporary issue that warrants a retry
+                error_msg = str(result.get('error', '')).lower()
+                if 'rate limit' in error_msg or 'timeout' in error_msg or 'connection' in error_msg:
+                    # Exponential backoff for retries
+                    retry_in = 60 * (2 ** self.request.retries)  # 60s, 120s, 240s
+                    logger.info(f"Temporary error detected. Retrying in {retry_in} seconds...")
+                    self.retry(countdown=retry_in)
+                
+                return {
+                    "success": False,
+                    "error": result.get('error')
+                }
+        except Exception as e:
+            # Clean up temp file if used
+            if temp_file and os.path.exists(temp_file.name):
+                os.unlink(temp_file.name)
+                
+            raise e  # Re-raise to be caught by the outer try/except
             
     except Exception as e:
         import traceback
         logger.error(f"Error processing file for vector store: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
+        
+        # Clean up temp file if it exists
+        if 'temp_file' in locals() and temp_file and os.path.exists(temp_file.name):
+            try:
+                os.unlink(temp_file.name)
+                logger.info(f"Cleaned up temporary file after error: {temp_file.name}")
+            except Exception:
+                pass
         
         # Try to update file status if possible
         try:

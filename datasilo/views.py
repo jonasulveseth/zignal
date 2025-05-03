@@ -51,45 +51,60 @@ def file_upload(request, slug):
         print("POST data:", request.POST)
         print("FILES data:", request.FILES)
         
-        # Check for duplicate file upload - prevent the double upload issue
-        request_id = request.headers.get('X-Request-ID') or request.META.get('HTTP_X_REQUEST_ID')
-        
-        # If it's an AJAX request, mark it as such to prevent duplicate processing
+        # Get headers and detect AJAX
         is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
-        print(f"Request headers: {request.headers}")
-        print(f"Is AJAX request: {is_ajax}")
+        request_id = request.headers.get('X-Request-ID') or request.META.get('HTTP_X_REQUEST_ID')
+        print(f"Request-ID: {request_id}, Is AJAX: {is_ajax}")
         
-        # Get the filename - we'll use this to prevent duplicates
+        # PREVENT DUPLICATE UPLOADS: Check if this is a duplicate request
+        # Use a unique cache key for this user and file
+        import hashlib
+        cache_key = None
+        
         if request.FILES and 'file' in request.FILES:
             uploaded_file = request.FILES['file']
             file_name = os.path.basename(uploaded_file.name)
             
-            # Check for recent uploads (last 10 minutes) with the same name to this silo
-            import datetime
-            from django.utils import timezone
-            time_threshold = timezone.now() - datetime.timedelta(minutes=10)
+            # Create a unique key based on user, file name, and file size
+            unique_str = f"{request.user.id}:{file_name}:{uploaded_file.size}"
+            cache_key = f"file_upload:{hashlib.md5(unique_str.encode()).hexdigest()}"
             
-            existing_files = DataFile.objects.filter(
-                data_silo=data_silo,
-                file__icontains=file_name,
-                created_at__gte=time_threshold
-            )
-            
-            if existing_files.exists():
-                print(f"Potential duplicate upload detected: {file_name}")
-                # If it's a duplicate request, just return the existing file
-                if is_ajax:
-                    return JsonResponse({
-                        'success': True,
-                        'file_id': existing_files.first().id,
-                        'file_name': existing_files.first().name,
-                        'file_url': existing_files.first().file.url,
-                        'message': 'File already uploaded'
-                    })
-                else:
-                    messages.info(request, "This file appears to have been already uploaded.")
-                    return redirect('datasilo:silo_detail', slug=data_silo.slug)
+            # Check if we've seen this request recently (from Django cache)
+            from django.core.cache import cache
+            if cache.get(cache_key):
+                print(f"Duplicate upload detected via cache key: {cache_key}")
+                
+                # Find the most recent matching file
+                import datetime
+                from django.utils import timezone
+                time_threshold = timezone.now() - datetime.timedelta(minutes=5)
+                
+                existing_files = DataFile.objects.filter(
+                    data_silo=data_silo,
+                    name__icontains=os.path.splitext(file_name)[0],
+                    created_at__gte=time_threshold
+                ).order_by('-created_at')
+                
+                if existing_files.exists():
+                    print(f"Found matching recent file: {existing_files.first().name}")
+                    data_file = existing_files.first()
+                    
+                    if is_ajax:
+                        return JsonResponse({
+                            'success': True,
+                            'file_id': data_file.id,
+                            'file_name': data_file.name,
+                            'file_url': data_file.file.url,
+                            'message': 'File already uploaded'
+                        })
+                    else:
+                        messages.info(request, "This file was already uploaded.")
+                        return redirect('datasilo:silo_detail', slug=data_silo.slug)
+                
+            # Set cache to prevent duplicate uploads (expire after 5 minutes)
+            cache.set(cache_key, True, 300)
         
+        # Process the form
         form = DataFileForm(request.POST, request.FILES, data_silo=data_silo, user=request.user)
         if form.is_valid():
             try:
@@ -98,6 +113,32 @@ def file_upload(request, slug):
                 # Update file size after save
                 data_file.size = data_file.file.size
                 data_file.save()
+                
+                # VERIFY FILE EXISTS: Check if file was actually stored
+                # For both local and S3 storage
+                from django.core.files.storage import default_storage
+                file_exists = False
+                
+                try:
+                    # Use storage API which works for both local and S3
+                    file_exists = default_storage.exists(data_file.file.name)
+                    
+                    # For local storage, also check the path directly
+                    if not file_exists and hasattr(data_file.file, 'path'):
+                        if os.path.exists(data_file.file.path):
+                            file_exists = True
+                except Exception as e:
+                    print(f"Error checking file existence: {str(e)}")
+                    file_exists = False
+                
+                if not file_exists:
+                    print(f"ERROR: File not found after upload: {data_file.file.name}")
+                    messages.error(request, "File was uploaded but could not be stored. Please contact support.")
+                    data_file.delete()  # Remove the database entry if file doesn't exist
+                    return redirect('datasilo:silo_detail', slug=data_silo.slug)
+                    
+                # File exists, continue with vector store processing
+                print(f"File successfully stored in storage: {data_file.file.name}")
                 
                 # Trigger file processing for vector store
                 from django.conf import settings
