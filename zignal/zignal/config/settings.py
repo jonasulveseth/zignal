@@ -150,6 +150,15 @@ CACHES = {
 # Celery settings
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2')
+
+# Fix for SSL connection with Redis in production
+if os.environ.get('REDIS_URL', '').startswith('rediss://'):
+    # If REDIS_URL uses SSL (rediss://), make sure Celery does too
+    if os.environ.get('CELERY_BROKER_URL', '').startswith('redis://'):
+        CELERY_BROKER_URL = CELERY_BROKER_URL.replace('redis://', 'rediss://', 1)
+    if os.environ.get('CELERY_RESULT_BACKEND', '').startswith('redis://'):
+        CELERY_RESULT_BACKEND = CELERY_RESULT_BACKEND.replace('redis://', 'rediss://', 1)
+
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -318,6 +327,13 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+# Fix Channel Layers Redis URL if using SSL in production
+if os.environ.get('REDIS_URL', '').startswith('rediss://'):
+    # Make sure Channel Layers is using rediss:// as well
+    channel_address = CHANNEL_LAYERS['default']['CONFIG']['hosts'][0]['address']
+    if channel_address.startswith('redis://'):
+        CHANNEL_LAYERS['default']['CONFIG']['hosts'][0]['address'] = channel_address.replace('redis://', 'rediss://', 1)
 
 # Notification settings
 NOTIFICATION_SOUND_ENABLED = os.getenv('NOTIFICATION_SOUND_ENABLED', 'True') == 'True'
