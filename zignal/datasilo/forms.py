@@ -52,7 +52,7 @@ class DataFileForm(forms.ModelForm):
     
     class Meta:
         model = DataFile
-        fields = ['name', 'description', 'file', 'file_type']
+        fields = ['description', 'file', 'file_type']  # Remove name from visible fields
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }
@@ -62,6 +62,10 @@ class DataFileForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
+        # Hide name field - we'll set it automatically from the file
+        if 'name' in self.fields:
+            del self.fields['name']
+        
         # Apply Tailwind CSS classes to all form fields
         for field_name, field in self.fields.items():
             if field_name == 'file':
@@ -69,33 +73,18 @@ class DataFileForm(forms.ModelForm):
             else:
                 field.widget.attrs['class'] = 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500'
     
-    def clean(self):
-        """Custom validation"""
-        cleaned_data = super().clean()
-        
-        # If name is empty, generate one from the file name
-        if not cleaned_data.get('name') and cleaned_data.get('file'):
-            file = cleaned_data.get('file')
-            # Extract original file name without extension
-            filename = os.path.splitext(file.name)[0]
-            # Clean up the filename to use as a name
-            cleaned_data['name'] = filename
-            
-        return cleaned_data
-    
     def save(self, commit=True):
         """Save the form and associate with the data silo"""
         instance = super().save(commit=False)
         
+        # Set name from uploaded file
+        if 'file' in self.cleaned_data and self.cleaned_data['file']:
+            # Extract original file name without extension
+            filename = os.path.splitext(self.cleaned_data['file'].name)[0]
+            instance.name = filename
+        
         if self.data_silo:
             instance.data_silo = self.data_silo
-            
-            # Let the model's save method handle these relationships
-            # to prevent potential duplicate saves
-            # if self.data_silo.project:
-            #     instance.project = self.data_silo.project
-            # if self.data_silo.company:
-            #     instance.company = self.data_silo.company
         
         if self.user:
             instance.uploaded_by = self.user
