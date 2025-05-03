@@ -128,15 +128,17 @@ DATABASES['default'].update(db_from_env)
 # Fix Redis URL scheme inconsistencies between local and production environments
 redis_main_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 
+# Define the function to convert Redis URLs to use rediss:// scheme when needed
+def ensure_rediss_scheme(url):
+    """Convert redis:// URLs to rediss:// if needed"""
+    return url.replace('redis://', 'rediss://', 1) if url and url.startswith('redis://') else url
+
 # Check if we're in an environment with SSL Redis (Heroku production)
 use_redis_ssl = redis_main_url.startswith('rediss://')
 
 # Make sure environment variables are consistent in production
 if use_redis_ssl and not DEBUG:
     # In production with SSL Redis - force environment variables to use rediss://
-    def ensure_rediss_scheme(url):
-        """Convert redis:// URLs to rediss:// if needed"""
-        return url.replace('redis://', 'rediss://', 1) if url and url.startswith('redis://') else url
     
     # Update environment variables directly (important for Celery worker processes)
     if 'REDIS_URL' in os.environ and os.environ['REDIS_URL'].startswith('redis://'):
