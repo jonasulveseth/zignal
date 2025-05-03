@@ -141,7 +141,7 @@ def ensure_rediss_scheme(url):
     return url.replace('redis://', 'rediss://', 1) if url and url.startswith('redis://') else url
 
 # Check if we're in an environment with SSL Redis (Heroku production)
-use_redis_ssl = redis_main_url.startswith('rediss://')
+use_redis_ssl = redis_main_url.startswith('rediss://') or (not DEBUG and os.getenv('CHANNEL_REDIS_URL', '').startswith('rediss://'))
 
 # Make sure environment variables are consistent in production
 if use_redis_ssl and not DEBUG:
@@ -156,6 +156,9 @@ if use_redis_ssl and not DEBUG:
         
     if 'CELERY_RESULT_BACKEND' in os.environ and os.environ['CELERY_RESULT_BACKEND'].startswith('redis://'):
         os.environ['CELERY_RESULT_BACKEND'] = ensure_rediss_scheme(os.environ['CELERY_RESULT_BACKEND'])
+        
+    if 'CHANNEL_REDIS_URL' in os.environ and os.environ['CHANNEL_REDIS_URL'].startswith('redis://'):
+        os.environ['CHANNEL_REDIS_URL'] = ensure_rediss_scheme(os.environ['CHANNEL_REDIS_URL'])
 
 # Set Redis URLs with consistent scheme
 if use_redis_ssl:
@@ -163,7 +166,7 @@ if use_redis_ssl:
     REDIS_URL = ensure_rediss_scheme(redis_main_url)
     CELERY_BROKER_URL = ensure_rediss_scheme(os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1'))
     CELERY_RESULT_BACKEND = ensure_rediss_scheme(os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2'))
-    CHANNEL_REDIS_URL = ensure_rediss_scheme(redis_main_url.replace('0', '3', 1))
+    CHANNEL_REDIS_URL = ensure_rediss_scheme(os.getenv('CHANNEL_REDIS_URL', redis_main_url.replace('0', '3', 1)))
     
     # SSL configuration parameters for Redis
     redis_ssl_config = {
@@ -175,7 +178,7 @@ else:
     REDIS_URL = redis_main_url
     CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1')
     CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2')
-    CHANNEL_REDIS_URL = redis_main_url.replace('0', '3', 1)
+    CHANNEL_REDIS_URL = os.getenv('CHANNEL_REDIS_URL', redis_main_url.replace('0', '3', 1))
     
     # Empty SSL config for local development
     redis_ssl_config = {}
@@ -348,19 +351,37 @@ if DEBUG:
 ASGI_APPLICATION = 'zignal.routing.application'
 
 # Channel Layers
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [
-                {
-                    'address': CHANNEL_REDIS_URL,
-                    **redis_ssl_config
-                }
-            ],
+if not DEBUG:
+    # In production, always use SSL settings for Redis
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [
+                    {
+                        'address': CHANNEL_REDIS_URL,
+                        'ssl_cert_reqs': None,
+                        'ssl_check_hostname': False,
+                    }
+                ],
+            },
         },
-    },
-}
+    }
+else:
+    # Local development - normal config
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [
+                    {
+                        'address': CHANNEL_REDIS_URL,
+                        **redis_ssl_config
+                    }
+                ],
+            },
+        },
+    }
 
 # Notification settings
 NOTIFICATION_SOUND_ENABLED = os.getenv('NOTIFICATION_SOUND_ENABLED', 'True') == 'True'
