@@ -72,8 +72,15 @@ def setup_company(request):
                     messages.warning(request, "Company created, but AI assistant setup encountered an issue. Some AI features may not be available.")
             
             # Create default project and data silo in the background using Celery
-            create_default_project_and_silo.delay(company.id, request.user.id)
-            logger.info(f"Triggered default project and silo creation for company: {company.name} (ID: {company.id})")
+            try:
+                # Try to use Celery for async task
+                create_default_project_and_silo.delay(company.id, request.user.id)
+                logger.info(f"Triggered default project and silo creation for company: {company.name} (ID: {company.id})")
+            except Exception as e:
+                # Fall back to synchronous execution if Celery fails
+                logger.warning(f"Celery task failed, running synchronously: {str(e)}")
+                create_default_project_and_silo(company.id, request.user.id)
+                logger.info(f"Completed synchronous project and silo creation for company: {company.name} (ID: {company.id})")
             
             # Show success message
             messages.success(request, f'Company "{company.name}" has been set up successfully!')
@@ -129,8 +136,15 @@ def create_company(request):
                     messages.warning(request, "Company created, but AI assistant setup encountered an issue. Some AI features may not be available.")
             
             # Create default project and data silo in the background using Celery
-            create_default_project_and_silo.delay(company.id, request.user.id)
-            logger.info(f"Triggered default project and silo creation for company: {company.name} (ID: {company.id})")
+            try:
+                # Try to use Celery for async task
+                create_default_project_and_silo.delay(company.id, request.user.id)
+                logger.info(f"Triggered default project and silo creation for company: {company.name} (ID: {company.id})")
+            except Exception as e:
+                # Fall back to synchronous execution if Celery fails
+                logger.warning(f"Celery task failed, running synchronously: {str(e)}")
+                create_default_project_and_silo(company.id, request.user.id)
+                logger.info(f"Completed synchronous project and silo creation for company: {company.name} (ID: {company.id})")
             
             # Show success message
             messages.success(request, f'Company "{company.name}" created successfully!')
