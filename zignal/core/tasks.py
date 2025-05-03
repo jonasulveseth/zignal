@@ -5,6 +5,7 @@ from projects.models import Project, UserProjectRelation
 from datasilo.models import DataSilo, DataFile
 import time
 import os
+import gc
 
 logger = logging.getLogger(__name__)
 
@@ -121,8 +122,8 @@ def create_default_project_and_silo(company_id, user_id):
             "error": str(e)
         }
 
-@shared_task
-def process_file_for_vector_store(file_id):
+@shared_task(bind=True, max_retries=3, rate_limit='5/m')
+def process_file_for_vector_store(self, file_id):
     """
     Process a file for the OpenAI Vector Store
     
@@ -173,12 +174,22 @@ def process_file_for_vector_store(file_id):
     except Exception as e:
         logger.error(f"Error configuring Redis SSL: {str(e)}")
     
+    # Force garbage collection to free up memory
+    gc.collect()
+    
     try:
         logger.info(f"Processing file for vector store: {file_id}")
         
-        # Get the file
-        data_file = DataFile.objects.get(id=file_id)
+        # Get the file with minimal fields to save memory
+        data_file = DataFile.objects.filter(id=file_id).select_related('data_silo', 'project', 'company').first()
         
+        if not data_file:
+            logger.error(f"File with ID {file_id} not found")
+            return {
+                "success": False,
+                "error": f"File with ID {file_id} not found"
+            }
+            
         # Check if already processed
         if data_file.vector_store_file_id:
             logger.info(f"File already has a vector store ID: {data_file.vector_store_file_id}")
@@ -189,8 +200,7 @@ def process_file_for_vector_store(file_id):
             }
         
         # Update status
-        data_file.vector_store_status = 'processing'
-        data_file.save(update_fields=['vector_store_status'])
+        DataFile.objects.filter(id=file_id).update(vector_store_status='processing')
         
         # Try to get company
         company = None
@@ -206,8 +216,7 @@ def process_file_for_vector_store(file_id):
         
         if not company:
             logger.error(f"No company found for file {file_id}")
-            data_file.vector_store_status = 'failed'
-            data_file.save(update_fields=['vector_store_status'])
+            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
             return {
                 "success": False,
                 "error": "No company found for file"
@@ -224,23 +233,23 @@ def process_file_for_vector_store(file_id):
                 setup_result = openai_service.setup_company_ai(company)
                 
                 if setup_result.get('success') and setup_result.get('vector_store_id'):
-                    company.openai_vector_store_id = setup_result.get('vector_store_id')
-                    if not company.openai_assistant_id and setup_result.get('assistant_id'):
-                        company.openai_assistant_id = setup_result.get('assistant_id')
-                    company.save(update_fields=['openai_vector_store_id', 'openai_assistant_id'])
+                    Company.objects.filter(id=company.id).update(
+                        openai_vector_store_id=setup_result.get('vector_store_id'),
+                        openai_assistant_id=setup_result.get('assistant_id') or company.openai_assistant_id
+                    )
+                    # Refresh company from database
+                    company = Company.objects.get(id=company.id)
                     logger.info(f"Created vector store for company: {company.openai_vector_store_id}")
                 else:
                     logger.error(f"Failed to create vector store: {setup_result.get('error')}")
-                    data_file.vector_store_status = 'failed'
-                    data_file.save(update_fields=['vector_store_status'])
+                    DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
                     return {
                         "success": False,
                         "error": f"Failed to create vector store: {setup_result.get('error')}"
                     }
             except Exception as e:
                 logger.error(f"Error creating vector store: {str(e)}")
-                data_file.vector_store_status = 'failed'
-                data_file.save(update_fields=['vector_store_status'])
+                DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
                 return {
                     "success": False,
                     "error": f"Error creating vector store: {str(e)}"
@@ -252,8 +261,7 @@ def process_file_for_vector_store(file_id):
             openai_service = CompanyOpenAIService()
         except ImportError as e:
             logger.error(f"OpenAI service not available: {str(e)}")
-            data_file.vector_store_status = 'failed'
-            data_file.save(update_fields=['vector_store_status'])
+            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
             return {
                 "success": False,
                 "error": f"OpenAI service not available: {str(e)}"
@@ -265,8 +273,7 @@ def process_file_for_vector_store(file_id):
         # Check if file exists and is accessible
         if not os.path.exists(file_path):
             logger.error(f"File not found: {file_path}")
-            data_file.vector_store_status = 'failed'
-            data_file.save(update_fields=['vector_store_status'])
+            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
             return {
                 "success": False,
                 "error": "File not found on disk"
@@ -274,10 +281,10 @@ def process_file_for_vector_store(file_id):
         
         # Check file size limit (OpenAI has 512MB limit)
         max_file_size = 512 * 1024 * 1024  # 512MB in bytes
-        if os.path.getsize(file_path) > max_file_size:
-            logger.error(f"File too large: {file_path} ({os.path.getsize(file_path)} bytes)")
-            data_file.vector_store_status = 'failed'
-            data_file.save(update_fields=['vector_store_status'])
+        file_size = os.path.getsize(file_path)
+        if file_size > max_file_size:
+            logger.error(f"File too large: {file_path} ({file_size} bytes)")
+            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
             return {
                 "success": False,
                 "error": "File too large for OpenAI API (max 512MB)"
@@ -286,12 +293,14 @@ def process_file_for_vector_store(file_id):
         # Check if OpenAI API key is configured
         if not settings.OPENAI_API_KEY or len(settings.OPENAI_API_KEY) < 10:
             logger.error("OpenAI API key not configured properly")
-            data_file.vector_store_status = 'failed'
-            data_file.save(update_fields=['vector_store_status'])
+            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
             return {
                 "success": False,
                 "error": "OpenAI API key not configured"
             }
+        
+        # Force garbage collection before heavy operation
+        gc.collect()
         
         # Upload file to vector store
         result = openai_service.add_file_to_vector_store(
@@ -302,24 +311,33 @@ def process_file_for_vector_store(file_id):
         
         if result.get('success'):
             # Update file with vector store ID
-            data_file.vector_store_file_id = result.get('file_id')
-            data_file.vector_store_status = 'processed'
-            data_file.vector_store_processed_at = timezone.now()
-            data_file.save(update_fields=[
-                'vector_store_file_id', 
-                'vector_store_status', 
-                'vector_store_processed_at'
-            ])
+            DataFile.objects.filter(id=file_id).update(
+                vector_store_file_id=result.get('file_id'),
+                vector_store_status='processed',
+                vector_store_processed_at=timezone.now()
+            )
             logger.info(f"File {file_id} added to vector store with ID: {result.get('file_id')}")
+            
+            # Force garbage collection
+            gc.collect()
+            
             return {
                 "success": True,
                 "file_id": result.get('file_id')
             }
         else:
             # Update file with error
-            data_file.vector_store_status = 'failed'
-            data_file.save(update_fields=['vector_store_status'])
+            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
             logger.error(f"Error adding file to vector store: {result.get('error')}")
+            
+            # Check if this is a rate limit error or temporary issue that warrants a retry
+            error_msg = str(result.get('error', '')).lower()
+            if 'rate limit' in error_msg or 'timeout' in error_msg or 'connection' in error_msg:
+                # Exponential backoff for retries
+                retry_in = 60 * (2 ** self.request.retries)  # 60s, 120s, 240s
+                logger.info(f"Temporary error detected. Retrying in {retry_in} seconds...")
+                self.retry(countdown=retry_in)
+            
             return {
                 "success": False,
                 "error": result.get('error')
@@ -332,12 +350,21 @@ def process_file_for_vector_store(file_id):
         
         # Try to update file status if possible
         try:
-            data_file = DataFile.objects.get(id=file_id)
-            data_file.vector_store_status = 'failed'
-            data_file.save(update_fields=['vector_store_status'])
-        except:
+            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+        except Exception:
             pass
             
+        # Check if this is a temporary error worth retrying
+        error_message = str(e).lower()
+        if 'timeout' in error_message or 'connection' in error_message or 'memory' in error_message:
+            # Retry with backoff
+            retry_in = 120 * (2 ** self.request.retries)  # 120s, 240s, 480s
+            logger.info(f"Temporary error detected. Retrying in {retry_in} seconds...")
+            self.retry(countdown=retry_in)
+            
+        # Force garbage collection
+        gc.collect()
+        
         return {
             "success": False,
             "error": str(e)
