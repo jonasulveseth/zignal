@@ -1,5 +1,6 @@
 from django import forms
 from .models import DataSilo, DataFile
+import os
 
 
 class DataSiloForm(forms.ModelForm):
@@ -67,6 +68,20 @@ class DataFileForm(forms.ModelForm):
                 field.widget.attrs['class'] = 'hidden'  # We'll use a custom file input UI
             else:
                 field.widget.attrs['class'] = 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500'
+    
+    def clean(self):
+        """Custom validation"""
+        cleaned_data = super().clean()
+        
+        # If name is empty, generate one from the file name
+        if not cleaned_data.get('name') and cleaned_data.get('file'):
+            file = cleaned_data.get('file')
+            # Extract original file name without extension
+            filename = os.path.splitext(file.name)[0]
+            # Clean up the filename to use as a name
+            cleaned_data['name'] = filename
+            
+        return cleaned_data
     
     def save(self, commit=True):
         """Save the form and associate with the data silo"""
