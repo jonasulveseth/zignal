@@ -205,3 +205,11 @@ NOTIFICATION_VIBRATION_ENABLED = os.getenv('NOTIFICATION_VIBRATION_ENABLED', 'Tr
 
 # Email domain for mail receiver
 EMAIL_DOMAIN = os.getenv('EMAIL_DOMAIN', 'zignal.se')
+
+# OpenAI API settings
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
+OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
+OPENAI_EMBEDDINGS_MODEL = os.getenv('OPENAI_EMBEDDINGS_MODEL', 'text-embedding-ada-002')
+
+# ASGI application path
+ASGI_APPLICATION = 'zignal.routing.application'
