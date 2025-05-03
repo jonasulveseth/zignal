@@ -139,6 +139,45 @@ def data_silo_delete(request, slug):
 @login_required
 def file_upload(request, slug):
     """Upload a file to a data silo"""
+    # Configure Redis SSL settings immediately
+    try:
+        import redis
+        import ssl
+        import os
+        from redis.connection import ConnectionPool
+        
+        # Check if we're in a production environment with SSL Redis
+        redis_url = os.environ.get('REDIS_URL', '')
+        if redis_url.startswith('rediss://'):
+            # Configure SSL settings
+            redis_ssl_settings = {
+                'ssl_cert_reqs': ssl.CERT_NONE,
+                'ssl_check_hostname': False,
+            }
+            
+            # Apply SSL settings to the global default connection pool
+            default_connection_pool = getattr(ConnectionPool, '_connection_pool_cache', {})
+            for url, pool in default_connection_pool.items():
+                if url.startswith('rediss://'):
+                    pool.connection_kwargs.update(redis_ssl_settings)
+                    
+            # Set environment variables for Celery to use these settings
+            os.environ['CELERY_REDIS_BACKEND_USE_SSL'] = 'True'
+            os.environ['CELERY_BROKER_USE_SSL'] = 'True'
+            
+            # Explicitly configure Redis connection for this request
+            redis_client = redis.Redis.from_url(
+                redis_url,
+                ssl_cert_reqs=None,
+                ssl_check_hostname=False
+            )
+            # Make a simple ping to test the connection
+            redis_client.ping()
+            
+            print("Redis SSL settings applied successfully")
+    except Exception as e:
+        print(f"Redis SSL configuration error: {str(e)}")
+    
     data_silo = get_object_or_404(DataSilo, slug=slug)
     
     # Check permissions
@@ -162,17 +201,6 @@ def file_upload(request, slug):
                 # Trigger file processing for vector store
                 from django.conf import settings
                 try:
-                    # Configure Redis SSL settings for Celery task
-                    import os
-                    import redis
-                    
-                    # Check if we're in a production environment with SSL Redis
-                    redis_url = os.environ.get('REDIS_URL', '')
-                    if redis_url.startswith('rediss://'):
-                        # Configure Celery to handle SSL properly
-                        os.environ['CELERY_REDIS_BACKEND_USE_SSL'] = 'True'
-                        os.environ['CELERY_BROKER_USE_SSL'] = 'True'
-                    
                     # Check if Celery tasks for vector store processing exist
                     from core.tasks import process_file_for_vector_store
                     # Schedule the task

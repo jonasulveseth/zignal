@@ -141,32 +141,37 @@ def process_file_for_vector_store(file_id):
     
     logger = logging.getLogger(__name__)
     
-    # Configure Redis SSL settings for this task if necessary
+    # Configure Redis SSL settings for this task
     try:
         import redis
         import ssl
-        from django.conf import settings
+        from redis.connection import ConnectionPool
         
-        # Check if we're using SSL Redis
+        # Check if we're in a production environment with SSL Redis
         redis_url = os.environ.get('REDIS_URL', '')
         if redis_url.startswith('rediss://'):
-            # Configure Redis to accept SSL connections without cert verification
-            redis_ssl_settings = {
+            # Configure SSL settings for Redis
+            ssl_settings = {
                 'ssl_cert_reqs': ssl.CERT_NONE,
-                'ssl_check_hostname': False,
+                'ssl_check_hostname': False
             }
-            # Patch Redis connection pool to use these settings
-            from redis.connection import ConnectionPool
             
-            # Apply SSL settings to the global default connection pool
+            # Apply SSL settings to the global connection pool
             default_connection_pool = getattr(ConnectionPool, '_connection_pool_cache', {})
             for url, pool in default_connection_pool.items():
                 if url.startswith('rediss://'):
-                    pool.connection_kwargs.update(redis_ssl_settings)
-            
-            logger.info("Redis SSL settings applied for vector store processing")
+                    pool.connection_kwargs.update(ssl_settings)
+                    
+            # Create a test connection to ensure settings are applied
+            test_client = redis.Redis.from_url(
+                redis_url,
+                ssl_cert_reqs=None,
+                ssl_check_hostname=False
+            )
+            test_client.ping()
+            logger.info("Redis SSL settings configured successfully for vector store task")
     except Exception as e:
-        logger.warning(f"Failed to configure Redis SSL settings: {str(e)}")
+        logger.error(f"Error configuring Redis SSL: {str(e)}")
     
     try:
         logger.info(f"Processing file for vector store: {file_id}")

@@ -74,22 +74,52 @@ class DataFileForm(forms.ModelForm):
                 field.widget.attrs['class'] = 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500'
     
     def save(self, commit=True):
-        """Save the form and associate with the data silo"""
-        instance = super().save(commit=False)
+        """Save the form and create file relationship with the data silo"""
+        try:
+            # Configure Redis SSL if needed
+            import os
+            import redis
+            import ssl
+            from redis.connection import ConnectionPool
+            
+            # Check if we're using Redis with SSL
+            redis_url = os.environ.get('REDIS_URL', '')
+            if redis_url.startswith('rediss://'):
+                # Configure SSL settings
+                ssl_settings = {
+                    'ssl_cert_reqs': ssl.CERT_NONE,
+                    'ssl_check_hostname': False
+                }
+                
+                # Apply settings to any existing connection pools
+                pools = getattr(ConnectionPool, '_connection_pool_cache', {})
+                for url, pool in pools.items():
+                    if url.startswith('rediss://'):
+                        pool.connection_kwargs.update(ssl_settings)
+                        
+        except Exception as e:
+            print(f"Redis SSL configuration in form save: {str(e)}")
+            
+        # Get or create the model instance
+        instance = super().save(False)
         
-        # Set name from uploaded file
-        if 'file' in self.cleaned_data and self.cleaned_data['file']:
-            # Extract original file name without extension
-            filename = os.path.splitext(self.cleaned_data['file'].name)[0]
-            instance.name = filename
-        
-        if self.data_silo:
+        # Set the data silo relationship if not already set
+        if self.data_silo and not instance.data_silo:
             instance.data_silo = self.data_silo
-        
-        if self.user:
-            instance.uploaded_by = self.user
-        
+            
+        # Set user if provided and not already set
+        if self.user and not instance.created_by:
+            instance.created_by = self.user
+            
+        # Auto-generate name from file if name is empty
+        if not instance.name and instance.file:
+            # Extract filename without extension
+            import os
+            filename = os.path.basename(instance.file.name)
+            instance.name = os.path.splitext(filename)[0]
+            
+        # Save the instance if commit is True
         if commit:
             instance.save()
-        
+            
         return instance 
