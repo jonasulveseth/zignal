@@ -142,6 +142,9 @@ def process_file_for_vector_store(file_id, max_retries=3):
     
     logger = logging.getLogger(__name__)
     
+    # Add debugging to detect duplicate calls
+    print(f"====== STARTING VECTOR STORE PROCESSING FOR FILE ID: {file_id} ======")
+    
     # Force garbage collection to free up memory
     gc.collect()
     
@@ -166,12 +169,19 @@ def process_file_for_vector_store(file_id, max_retries=3):
             # Check if already processed
             if data_file.vector_store_file_id:
                 logger.info(f"File already has a vector store ID: {data_file.vector_store_file_id}")
+                print(f"====== SKIPPING - ALREADY PROCESSED: File ID {file_id} already has vector store ID: {data_file.vector_store_file_id} ======")
                 return {
                     "success": True,
                     "message": "File already processed",
                     "file_id": data_file.vector_store_file_id
                 }
             
+            # If this file was already being processed, we may have a duplicate call
+            if data_file.vector_store_status == 'processing':
+                logger.warning(f"File ID {file_id} was already in 'processing' state - possible duplicate call!")
+                print(f"====== WARNING - DUPLICATE CALL DETECTED: File ID {file_id} already in 'processing' state ======")
+                # Continue processing anyway in case the previous attempt failed
+                
             # Update status
             DataFile.objects.filter(id=file_id).update(vector_store_status='processing')
             

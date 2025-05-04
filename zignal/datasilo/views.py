@@ -197,6 +197,7 @@ def file_upload(request, slug):
         # Use a unique cache key for this user and file
         import hashlib
         cache_key = None
+        duplicate_detected = False  # Flag to track if a duplicate is detected
         
         if request.FILES and 'file' in request.FILES:
             uploaded_file = request.FILES['file']
@@ -210,6 +211,7 @@ def file_upload(request, slug):
             from django.core.cache import cache
             if cache.get(cache_key):
                 print(f"Duplicate upload detected via cache key: {cache_key}")
+                duplicate_detected = True  # Set the flag
                 
                 # Find the most recent matching file
                 import datetime
@@ -237,10 +239,21 @@ def file_upload(request, slug):
                     else:
                         messages.info(request, "This file was already uploaded.")
                         return redirect('datasilo:silo_detail', slug=data_silo.slug)
-                
-            # Set cache to prevent duplicate uploads (expire after 5 minutes)
-            cache.set(cache_key, True, 300)
+            else:
+                # Set cache to prevent duplicate uploads (expire after 5 minutes)
+                cache.set(cache_key, True, 300)
         
+        # If duplicate detected but no matching file found, reject the upload
+        if duplicate_detected:
+            if is_ajax:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Duplicate upload detected'
+                })
+            else:
+                messages.error(request, "Duplicate upload detected. Please try again in a few minutes.")
+                return redirect('datasilo:silo_detail', slug=data_silo.slug)
+                
         # Process the form
         form = DataFileForm(request.POST, request.FILES, data_silo=data_silo, user=request.user)
         if form.is_valid():
@@ -334,26 +347,23 @@ def file_upload(request, slug):
                 # Trigger file processing for vector store
                 from django.conf import settings
                 
-                # Using synchronous processing instead of Celery
-                if getattr(settings, 'USE_SYNCHRONOUS_TASKS', False):
-                    try:
-                        from core.tasks import process_file_for_vector_store
+                # Process file for vector store - use either synchronous or normal call
+                try:
+                    from core.tasks import process_file_for_vector_store
+                    
+                    # Choose processing method based on settings
+                    if getattr(settings, 'USE_SYNCHRONOUS_TASKS', False):
                         print(f"Running synchronous vector store processing for file ID: {data_file.id}")
-                        process_file_for_vector_store(data_file.id)
-                    except (ImportError, AttributeError) as e:
-                        print(f"Vector store processing not available: {str(e)}")
-                        data_file.vector_store_status = 'failed'
-                        data_file.save(update_fields=['vector_store_status'])
-                else:
-                    try:
-                        from core.tasks import process_file_for_vector_store
-                        # Use normal function call
-                        process_file_for_vector_store(data_file.id)
+                    else:
                         print(f"Called vector store processing for file ID: {data_file.id}")
-                    except Exception as e:
-                        print(f"Error processing file for vector store: {str(e)}")
-                        data_file.vector_store_status = 'failed'
-                        data_file.save(update_fields=['vector_store_status'])
+                    
+                    # Call the processing function only once
+                    process_file_for_vector_store(data_file.id)
+                except Exception as e:
+                    error_msg = f"Vector store processing error: {str(e)}"
+                    print(error_msg)
+                    data_file.vector_store_status = 'failed'
+                    data_file.save(update_fields=['vector_store_status'])
                 
                 if is_ajax:
                     # Return JSON response for AJAX requests

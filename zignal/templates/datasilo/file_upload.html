@@ -286,14 +286,23 @@
       // Always prevent default form submission
       e.preventDefault();
       
+      // Check if the submit button is already disabled to prevent double submissions
+      if (submitBtn.disabled) {
+        console.log("Form submission already in progress, preventing duplicate submission");
+        return;
+      }
+      
       if (fileInput.files.length === 0) {
         alert('Please select at least one file to upload.');
         return;
       }
       
+      // Immediately disable the submit button to prevent double clicks
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Uploading...';
+      
       // Show progress bar
       uploadProgress.classList.remove('hidden');
-      submitBtn.disabled = true;
       
       // Create FormData and append form fields
       const formData = new FormData(uploadForm);
@@ -302,6 +311,10 @@
       const xhr = new XMLHttpRequest();
       xhr.open('POST', uploadForm.action || window.location.href, true);
       xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      
+      // Add a unique request ID to help track duplicates
+      const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      xhr.setRequestHeader('X-Request-ID', requestId);
       
       // Set up progress tracking
       xhr.upload.addEventListener('progress', function(e) {
@@ -329,6 +342,7 @@
           progressBar.classList.remove('bg-blue-600');
           progressBar.classList.add('bg-red-600');
           submitBtn.disabled = false;
+          submitBtn.innerText = 'Upload Files';
           alert('There was a problem with the upload. Please try again.');
         }
       };
@@ -339,6 +353,7 @@
         progressBar.classList.remove('bg-blue-600');
         progressBar.classList.add('bg-red-600');
         submitBtn.disabled = false;
+        submitBtn.innerText = 'Upload Files';
         alert('There was a network error. Please check your connection and try again.');
       };
       

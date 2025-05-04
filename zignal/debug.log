@@ -2550,3 +2550,95 @@ ERROR 2025-05-04 16:27:36,445 tasks Error adding file to vector store: Error cod
 ERROR 2025-05-04 16:27:37,029 openai_service Error creating thread with file attachment: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search#supported-files', 'type': 'invalid_request_error', 'param': None, 'code': 'unsupported_file'}}
 INFO 2025-05-04 16:27:37,030 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpc9ui15s3
 ERROR 2025-05-04 16:27:37,037 tasks Error adding file to vector store: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search#supported-files', 'type': 'invalid_request_error', 'param': None, 'code': 'unsupported_file'}}
+INFO 2025-05-04 16:39:33,656 tasks Processing file for vector store: 20 (Attempt 1)
+INFO 2025-05-04 16:39:33,727 tasks Processing file for vector store: 19 (Attempt 1)
+INFO 2025-05-04 16:39:33,734 tasks File name: Bowter_offert_69, Storage path: datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf
+INFO 2025-05-04 16:39:33,734 tasks File name: Bowter_offert_69, Storage path: datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf
+INFO 2025-05-04 16:39:33,759 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 16:39:33,759 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 16:39:33,759 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=silo
+INFO 2025-05-04 16:39:33,759 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=silo
+INFO 2025-05-04 16:39:33,759 tasks Original file path: datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf
+INFO 2025-05-04 16:39:33,760 tasks Original file path: datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf
+INFO 2025-05-04 16:39:33,760 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf', 'media/datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf', 'silo/datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf']
+INFO 2025-05-04 16:39:33,760 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf', 'media/datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf', 'silo/datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf']
+WARNING 2025-05-04 16:39:34,136 tasks File not found with storage.exists, trying direct boto3 access
+WARNING 2025-05-04 16:39:34,142 tasks File not found with storage.exists, trying direct boto3 access
+WARNING 2025-05-04 16:39:34,432 tasks Boto3 head_object failed for key: datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf - An error occurred (404) when calling the HeadObject operation: Not Found
+WARNING 2025-05-04 16:39:34,455 tasks Boto3 head_object failed for key: datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf - An error occurred (404) when calling the HeadObject operation: Not Found
+WARNING 2025-05-04 16:39:34,466 tasks Boto3 head_object failed for key: media/datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf - An error occurred (404) when calling the HeadObject operation: Not Found
+WARNING 2025-05-04 16:39:34,482 tasks Boto3 head_object failed for key: media/datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf - An error occurred (404) when calling the HeadObject operation: Not Found
+INFO 2025-05-04 16:39:34,490 tasks Found existing S3 object with boto3 key: silo/datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf
+INFO 2025-05-04 16:39:34,490 tasks Using direct boto3 S3 access with bucket=zignalse, key=silo/datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf
+INFO 2025-05-04 16:39:34,491 tasks Core processing function for file: 19, S3: True
+INFO 2025-05-04 16:39:34,624 tasks Found existing S3 object with boto3 key: silo/datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf
+INFO 2025-05-04 16:39:34,624 tasks Using direct boto3 S3 access with bucket=zignalse, key=silo/datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf
+INFO 2025-05-04 16:39:34,624 tasks Core processing function for file: 20, S3: True
+INFO 2025-05-04 16:39:34,724 openai_service Adding S3 file to vector store - bucket: zignalse, key: silo/datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf
+INFO 2025-05-04 16:39:34,729 openai_service Adding S3 file to vector store - bucket: zignalse, key: silo/datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf
+INFO 2025-05-04 16:39:34,941 openai_service Found existing S3 object with key: silo/datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf
+INFO 2025-05-04 16:39:34,941 openai_service Using S3 key: silo/datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf (original: silo/datasilo/company/jonas-company/293f4d59-d107-4191-81e4-0a09fcd764e2.pdf)
+INFO 2025-05-04 16:39:34,944 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpywv9fop0
+INFO 2025-05-04 16:39:34,951 openai_service Found existing S3 object with key: silo/datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf
+INFO 2025-05-04 16:39:34,951 openai_service Using S3 key: silo/datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf (original: silo/datasilo/company/jonas-company/ea6498b6-cbc4-4818-bbb8-557f9d632190.pdf)
+INFO 2025-05-04 16:39:34,951 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp3h7kbl18
+INFO 2025-05-04 16:39:35,983 openai_service Uploaded file Bowter_offert_69 to OpenAI with ID: file-WvFiynzu3cYRrk1sJyVFEz
+INFO 2025-05-04 16:39:36,200 openai_service Uploaded file Bowter_offert_69 to OpenAI with ID: file-PgXkmaRAo4WKpHExhrfs8Q
+ERROR 2025-05-04 16:39:36,909 openai_service Error adding file to vector store: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search/supported-files', 'type': 'invalid_request_error', 'param': 'file_ids', 'code': 'unsupported_file'}}
+ERROR 2025-05-04 16:39:37,763 openai_service Error adding file to vector store: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search/supported-files', 'type': 'invalid_request_error', 'param': 'file_ids', 'code': 'unsupported_file'}}
+ERROR 2025-05-04 16:39:38,123 openai_service Error creating thread with file attachment: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search#supported-files', 'type': 'invalid_request_error', 'param': None, 'code': 'unsupported_file'}}
+INFO 2025-05-04 16:39:38,124 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp3h7kbl18
+ERROR 2025-05-04 16:39:38,130 tasks Error adding file to vector store: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search#supported-files', 'type': 'invalid_request_error', 'param': None, 'code': 'unsupported_file'}}
+ERROR 2025-05-04 16:39:39,545 openai_service Error creating thread with file attachment: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search#supported-files', 'type': 'invalid_request_error', 'param': None, 'code': 'unsupported_file'}}
+INFO 2025-05-04 16:39:39,545 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpywv9fop0
+ERROR 2025-05-04 16:39:39,550 tasks Error adding file to vector store: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search#supported-files', 'type': 'invalid_request_error', 'param': None, 'code': 'unsupported_file'}}
+INFO 2025-05-04 16:41:22,056 tasks Processing file for vector store: 22 (Attempt 1)
+INFO 2025-05-04 16:41:22,085 tasks Processing file for vector store: 21 (Attempt 1)
+INFO 2025-05-04 16:41:22,092 tasks File name: fbf_ab_aktioverlatelse, Storage path: datasilo/company/jonas-company/741d2e8d-c996-46a8-acd2-710502545840.pdf
+INFO 2025-05-04 16:41:22,092 tasks File name: fbf_ab_aktioverlatelse, Storage path: datasilo/company/jonas-company/67ae424c-90be-4cff-8f03-bdeb03233cb4.pdf
+INFO 2025-05-04 16:41:22,125 tasks Using S3 storage: False (Storage class: FileSystemStorage)
+INFO 2025-05-04 16:41:22,125 tasks Using S3 storage: False (Storage class: FileSystemStorage)
+INFO 2025-05-04 16:41:22,125 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 16:41:22,125 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 16:41:22,127 tasks File downloaded successfully to /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpswrml3_a.pdf (42121 bytes)
+INFO 2025-05-04 16:41:22,127 tasks Core processing function for file: 22, S3: False
+INFO 2025-05-04 16:41:22,127 tasks File downloaded successfully to /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpzk5gsfrq.pdf (42121 bytes)
+INFO 2025-05-04 16:41:22,159 tasks Core processing function for file: 21, S3: False
+INFO 2025-05-04 16:41:22,854 openai_service Uploaded file fbf_ab_aktioverlatelse to OpenAI with ID: file-4TxSp3Lju41Fkf4xWHBqiF
+INFO 2025-05-04 16:41:23,265 openai_service Uploaded file fbf_ab_aktioverlatelse to OpenAI with ID: file-2B6dEoM3aFhmvhTyyZqvMY
+INFO 2025-05-04 16:41:23,537 openai_service Added file to vector store batch: vsfb_d522a790aa654a3d8187957b2ddbb7d1
+INFO 2025-05-04 16:41:23,540 tasks File 21 added to vector store with ID: file-4TxSp3Lju41Fkf4xWHBqiF
+INFO 2025-05-04 16:41:23,584 tasks Temporary file deleted
+INFO 2025-05-04 16:41:23,938 openai_service Added file to vector store batch: vsfb_25e15c3f23f343baa47b52805229d9d5
+INFO 2025-05-04 16:41:23,954 tasks File 22 added to vector store with ID: file-2B6dEoM3aFhmvhTyyZqvMY
+INFO 2025-05-04 16:41:24,026 tasks Temporary file deleted
+INFO 2025-05-04 16:45:43,706 tasks Processing file for vector store: 24 (Attempt 1)
+INFO 2025-05-04 16:45:43,709 tasks Processing file for vector store: 23 (Attempt 1)
+INFO 2025-05-04 16:45:43,713 tasks File name: captainss_ab_shareholder_agreement, Storage path: datasilo/company/jonas-company/496f1671-0e40-4583-9060-8f05985062d1.pdf
+INFO 2025-05-04 16:45:43,713 tasks File name: captainss_ab_shareholder_agreement, Storage path: datasilo/company/jonas-company/24e203d3-82f3-47a8-83cd-a16e1310f177.pdf
+INFO 2025-05-04 16:45:43,725 tasks Using S3 storage: False (Storage class: FileSystemStorage)
+INFO 2025-05-04 16:45:43,725 tasks Using S3 storage: False (Storage class: FileSystemStorage)
+INFO 2025-05-04 16:45:43,725 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 16:45:43,725 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 16:45:43,726 tasks File downloaded successfully to /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpwsfm6m4m.pdf (45169 bytes)
+INFO 2025-05-04 16:45:43,726 tasks File downloaded successfully to /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpbkj_nzcp.pdf (45169 bytes)
+INFO 2025-05-04 16:45:43,726 tasks Core processing function for file: 23, S3: False
+INFO 2025-05-04 16:45:43,726 tasks Core processing function for file: 24, S3: False
+INFO 2025-05-04 16:45:44,377 openai_service Uploaded file captainss_ab_shareholder_agreement to OpenAI with ID: file-2J5WCE5Bn7H5jfA8M7GuQN
+INFO 2025-05-04 16:45:44,505 openai_service Uploaded file captainss_ab_shareholder_agreement to OpenAI with ID: file-ShUJc8kb7jCFDFvpG1hfW4
+INFO 2025-05-04 16:45:45,092 openai_service Added file to vector store batch: vsfb_cfa8469063224997b83ee6b1238d9743
+INFO 2025-05-04 16:45:45,095 tasks File 24 added to vector store with ID: file-2J5WCE5Bn7H5jfA8M7GuQN
+INFO 2025-05-04 16:45:45,161 tasks Temporary file deleted
+INFO 2025-05-04 16:45:45,591 openai_service Added file to vector store batch: vsfb_570482afc7ef412baafb3415707ab4ce
+INFO 2025-05-04 16:45:45,592 tasks File 23 added to vector store with ID: file-ShUJc8kb7jCFDFvpG1hfW4
+INFO 2025-05-04 16:45:45,642 tasks Temporary file deleted
+INFO 2025-05-04 16:50:20,455 tasks Processing file for vector store: 25 (Attempt 1)
+INFO 2025-05-04 16:50:20,459 tasks File name: avräkningsnota_dragon_invest_2024_06_28, Storage path: datasilo/company/jonas-company/a860af73-80a3-4746-a217-674c630272d9.pdf
+INFO 2025-05-04 16:50:20,506 tasks Using S3 storage: False (Storage class: FileSystemStorage)
+INFO 2025-05-04 16:50:20,506 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 16:50:20,507 tasks File downloaded successfully to /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpie428c60.pdf (86257 bytes)
+INFO 2025-05-04 16:50:20,507 tasks Core processing function for file: 25, S3: False
+INFO 2025-05-04 16:50:21,419 openai_service Uploaded file avräkningsnota_dragon_invest_2024_06_28 to OpenAI with ID: file-NpTS9uJr2DH2xyawBkYUHS
+INFO 2025-05-04 16:50:22,219 openai_service Added file to vector store batch: vsfb_f14b3efe2e7a45fc99ec5d66c4d75c7a
+INFO 2025-05-04 16:50:22,223 tasks File 25 added to vector store with ID: file-NpTS9uJr2DH2xyawBkYUHS
+INFO 2025-05-04 16:50:22,310 tasks Temporary file deleted
