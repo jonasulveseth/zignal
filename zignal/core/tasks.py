@@ -410,7 +410,7 @@ def process_file_for_vector_store_core(file_path=None, data_file=None, metadata=
     """
     from datasilo.models import DataFile
     from django.utils import timezone
-    from core.services import openai_service
+    from companies.services.openai_service import CompanyOpenAIService
     from django.conf import settings
     import gc
     import os
@@ -462,14 +462,16 @@ def process_file_for_vector_store_core(file_path=None, data_file=None, metadata=
     gc.collect()
     
     try:
+        # Create an instance of the OpenAI service
+        openai_service = CompanyOpenAIService()
+        
         # Upload file to vector store - which method depends on what we have
         if file_path:
             # Use local file path
             result = openai_service.add_file_to_vector_store(
                 company,
                 file_path,
-                data_file.name,
-                metadata=metadata
+                data_file.name
             )
         else:
             # Use S3 file directly
@@ -478,7 +480,7 @@ def process_file_for_vector_store_core(file_path=None, data_file=None, metadata=
                 s3_bucket,
                 s3_key,
                 data_file.name,
-                metadata=metadata
+                metadata
             )
         
         if result.get('success'):
