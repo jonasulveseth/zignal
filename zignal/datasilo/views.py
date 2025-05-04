@@ -452,6 +452,22 @@ def company_data_silos(request, company_id):
     
     # Get all data silos for the company
     data_silos = DataSilo.objects.filter(company=company)
+    # Get all files across all silos for this company
+    total_files = DataFile.objects.filter(data_silo__company=company).count()
+    
+    # If there are no silos but user has permission, create a default silo
+    if data_silos.count() == 0 and (user.is_staff or user.is_superuser or company.id in user_companies):
+        default_silo = DataSilo.objects.create(
+            name="Default Silo",
+            description="Default data silo for company documents",
+            company=company,
+            created_by=user
+        )
+        messages.success(request, "Created a default data silo for your company.")
+        return redirect('datasilo:silo_detail', slug=default_silo.slug)
+    # If there's exactly one silo, redirect directly to it
+    if data_silos.count() >= 1:
+        return redirect('datasilo:silo_detail', slug=data_silos.first().slug)
     
     # Handle search
     search_query = request.GET.get('search', '')
