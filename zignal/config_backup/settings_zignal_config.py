@@ -28,23 +28,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-mcc@@y*qg7%42w)mw44s=((ukn@e7$!!*5af1+f7xvtlz(t7i%')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Default to False in production, enable for development with environment variable
-debug_env = os.environ.get('DEBUG', '')
-DEBUG = debug_env.lower() in ('true', 'yes', 'y', '1', 't')
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-# Print debug mode for diagnostic purposes
-print(f"DEBUG mode: {'ENABLED' if DEBUG else 'DISABLED'}")
-
-# Set allowed hosts based on environment
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'mighty-wave-39560-d078d75c03f3.herokuapp.com', 'zignal.se', 'www.zignal.se']
-
-# Additional hosts from environment variable
-additional_hosts = os.environ.get('ALLOWED_HOSTS', '')
-if additional_hosts:
-    ALLOWED_HOSTS.extend(additional_hosts.split(','))
-
-# Print allowed hosts for diagnostic purposes
-print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,mighty-wave-39560-d078d75c03f3.herokuapp.com').split(',')
 
 # CSRF settings - trusted origins for cross-domain requests
 CSRF_TRUSTED_ORIGINS = [
@@ -52,6 +38,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://zignal.se', 
     'https://mighty-wave-39560-d078d75c03f3.herokuapp.com'
 ]
+
 
 # Application definition
 
@@ -71,7 +58,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'anymail',
     'rest_framework',
-    'storages',  # For S3 storage
+    'channels',
     
     # Local apps
     'users',
@@ -142,13 +129,75 @@ import dj_database_url
 db_from_env = dj_database_url.config(conn_max_age=600)
 DATABASES['default'].update(db_from_env)
 
-# Cache configuration (using local memory cache instead of Redis)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
+
+# Cache and Redis settings
+
+# Fix Redis URL scheme inconsistencies between local and production environments
+redis_main_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+redis_ssl = redis_main_url.startswith('rediss://')
+
+# Set up channel Redis URL - default to same as main Redis but with different DB
+CHANNEL_REDIS_URL = os.getenv('CHANNEL_REDIS_URL', redis_main_url.replace('6379/0', '6379/3'))
+
+# Redis settings for Celery
+CELERY_RESULT_BACKEND = redis_main_url
+CELERY_BROKER_URL = redis_main_url
+
+# Redis connections need SSL settings in production
+if redis_ssl:
+    # SSL settings for Redis connections
+    from redis.connection import ConnectionPool
+    import ssl
+    
+    # Configure SSL settings - disable certificate verification for Heroku Redis
+    REDIS_SSL_SETTINGS = {
+        'ssl_cert_reqs': ssl.CERT_NONE,
+        'ssl_check_hostname': False
     }
-}
+    
+    # Configure Celery to use SSL for Redis
+    CELERY_REDIS_BACKEND_USE_SSL = REDIS_SSL_SETTINGS
+    CELERY_BROKER_USE_SSL = REDIS_SSL_SETTINGS
+    
+    # Apply settings to all Redis connection pools globally
+    def configure_redis_ssl():
+        try:
+            pools = getattr(ConnectionPool, '_connection_pool_cache', {})
+            for url, pool in pools.items():
+                if url.startswith('rediss://'):
+                    pool.connection_kwargs.update(REDIS_SSL_SETTINGS)
+        except Exception as e:
+            print(f"Error configuring Redis SSL pools: {str(e)}")
+    
+    configure_redis_ssl()
+
+# Channel Layers
+if redis_ssl:
+    # In production, configure Redis with SSL settings for Channels
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [
+                    {
+                        'address': CHANNEL_REDIS_URL,
+                        'ssl_cert_reqs': None,
+                        'ssl_check_hostname': False,
+                    }
+                ],
+            },
+        },
+    }
+else:
+    # Local development - normal config
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [CHANNEL_REDIS_URL],
+            },
+        },
+    }
 
 # Notification settings
 NOTIFICATION_SOUND_ENABLED = os.getenv('NOTIFICATION_SOUND_ENABLED', 'True') == 'True'
@@ -175,6 +224,9 @@ if DEBUG:
     if NGROK_URL:
         HOST_URL = NGROK_URL
 
+# ASGI application path
+ASGI_APPLICATION = 'zignal.routing.application'
+
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
@@ -186,148 +238,32 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# S3 Storage Settings - Always use S3 for both development and production
-# Use S3 for file storage to ensure consistent behavior across environments
-print("Using S3 for file storage in all environments")
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-# AWS Settings
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
-AWS_DEFAULT_ACL = os.environ.get('AWS_DEFAULT_ACL', 'private')  # Files are private by default
-AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', None)
-AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'eu-west-1')
-AWS_LOCATION = os.environ.get('AWS_LOCATION', 'media')
-AWS_IS_GZIPPED = True
-AWS_S3_FILE_OVERWRITE = False  # Don't overwrite files with the same name
-AWS_S3_SIGNATURE_VERSION = 's3v4'
-AWS_S3_ADDRESSING_STYLE = 'virtual'  # Use virtual-hosted style URLs
-
-# Improve error handling for S3
-AWS_S3_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
-AWS_S3_OBJECT_PARAMETERS = {
-    'CacheControl': 'max-age=86400',  # 1 day cache
-}
-
-# Debug S3 settings
-print(f"S3 Storage: bucket={AWS_STORAGE_BUCKET_NAME}, region={AWS_S3_REGION_NAME}, location={AWS_LOCATION}")
-    
-# Media config with S3
-MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/" if AWS_S3_CUSTOM_DOMAIN else f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/{AWS_LOCATION}/"
-
-# Create customized S3 storage with our configured settings
-from storages.backends.s3boto3 import S3Boto3Storage
-
-class MediaStorage(S3Boto3Storage):
-    location = AWS_LOCATION
-    file_overwrite = AWS_S3_FILE_OVERWRITE
-    default_acl = AWS_DEFAULT_ACL
-    
-    def _normalize_name(self, name):
-        """
-        Override to handle both absolute and relative paths
-        This ensures consistent storage path construction 
-        regardless of what Django passes in
-        """
-        if name.startswith('/'):
-            name = name[1:]
-            
-        # Ensure media/ prefix if AWS_LOCATION is 'media'
-        if AWS_LOCATION == 'media' and not name.startswith('media/'):
-            name = f'media/{name}'
-            
-        return super()._normalize_name(name)
-
-# Make storage class directly available to apps
-MEDIA_STORAGE_CLASS = MediaStorage
-
-# Override default storage globally (must do this after MediaStorage class is defined)
-from django.core.files.storage import default_storage
-import django
-
-# If Django is still initializing, do this later
-if django.apps.apps.ready:
-    # App registry is ready, we can update default_storage
-    try:
-        # Initialize a storage instance
-        s3_storage = MediaStorage()
-        
-        # Force default_storage to use our S3 storage
-        default_storage._wrapped = s3_storage
-        
-        print("Successfully forced S3 storage for all file operations")
-    except Exception as e:
-        print(f"Error forcing S3 storage: {str(e)}")
-
 # Simplified static file serving for production
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Email processing settings 
-# Use synchronous processing instead of Celery for email handling
-PROCESS_EMAILS_SYNC = True
-
-# Replace task queue with synchronous processing
-USE_SYNCHRONOUS_TASKS = True
-
-# Logging configuration
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'debug.log',
-            'formatter': 'verbose',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'core': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'datasilo': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'companies.services': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'storages': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
+# Redis Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': redis_main_url,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': REDIS_SSL_SETTINGS if redis_ssl else {},
+        }
+    }
 }
+
+# Celery settings
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+# Email processing settings
+PROCESS_EMAILS_SYNC = os.getenv('PROCESS_EMAILS_SYNC', 'False') == 'True'
 
 # Auth settings
 AUTH_USER_MODEL = 'users.User'

@@ -1,0 +1,57 @@
+{
+  "name": "Zignal Django App",
+  "description": "Zignal Django application with S3 storage",
+  "repository": "https://github.com/yourusername/zignal_django",
+  "keywords": ["python", "django", "s3"],
+  "success_url": "/",
+  "env": {
+    "SECRET_KEY": {
+      "description": "A secret key for Django",
+      "generator": "secret"
+    },
+    "DEBUG": {
+      "description": "Enable debug mode (true/false)",
+      "value": "false"
+    },
+    "AWS_ACCESS_KEY_ID": {
+      "description": "AWS Access Key ID for S3 storage"
+    },
+    "AWS_SECRET_ACCESS_KEY": {
+      "description": "AWS Secret Access Key for S3 storage"
+    },
+    "AWS_STORAGE_BUCKET_NAME": {
+      "description": "AWS S3 bucket name"
+    },
+    "AWS_S3_REGION_NAME": {
+      "description": "AWS S3 region",
+      "value": "eu-west-1"
+    },
+    "AWS_LOCATION": {
+      "description": "Base path for media files in S3",
+      "value": "media"
+    },
+    "OPENAI_API_KEY": {
+      "description": "OpenAI API key for vector store processing"
+    },
+    "DATABASE_URL": {
+      "description": "Database connection URL (provided by Heroku Postgres add-on)"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:hobby-dev",
+      "as": "DATABASE"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  }
+} 

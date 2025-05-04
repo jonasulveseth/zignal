@@ -26,9 +26,6 @@ def file_upload_path(instance, filename):
     elif hasattr(instance, 'data_silo') and instance.data_silo and instance.data_silo.project:
         project_slug = instance.data_silo.project.slug
     
-    # Get the AWS_LOCATION setting which may be 'media' or something else
-    aws_location = getattr(settings, 'AWS_LOCATION', 'media')
-    
     # Create base path based on available information
     if company_slug and project_slug:
         base_path = f"datasilo/{company_slug}/{project_slug}/{unique_id}.{ext}"
@@ -38,7 +35,7 @@ def file_upload_path(instance, filename):
         # Fallback for when neither company nor project is available
         base_path = f"datasilo/files/{unique_id}.{ext}"
     
-    # Return the path - storage class handles media/ prefix if needed
+    print(f"Generated file path: {base_path} for file: {filename}")
     return base_path
 
 
