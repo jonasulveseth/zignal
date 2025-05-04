@@ -408,9 +408,9 @@ def process_file_for_vector_store_core(file_path=None, data_file=None, metadata=
     """Core function to process a file for the vector store.
     Can work with either a local file_path OR an S3 file (bucket and key).
     """
-    from zignal.datasilo.models import DataFile
+    from datasilo.models import DataFile
     from django.utils import timezone
-    from zignal.core.services import openai_service
+    from core.services import openai_service
     from django.conf import settings
     import gc
     import os
