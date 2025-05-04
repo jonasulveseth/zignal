@@ -294,52 +294,6 @@ def file_upload(request, slug):
                     if not file_exists and hasattr(data_file.file, 'path') and os.path.exists(data_file.file.path):
                         file_exists = True
                         print(f"File exists check using path: {file_exists}")
-                        
-                    # For S3 storage specifically, do a direct validation
-                    if s3_storage and file_exists:
-                        try:
-                            import boto3
-                            from botocore.exceptions import ClientError
-                            
-                            # Create S3 client
-                            s3 = boto3.client(
-                                's3',
-                                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                                region_name=settings.AWS_S3_REGION_NAME
-                            )
-                            
-                            # Check directly with boto3 - try multiple path patterns
-                            s3_found = False
-                            s3_key_variations = [
-                                data_file.file.name,  # As stored in Django
-                                f"media/{data_file.file.name}",  # With media prefix
-                                data_file.file.name.replace('media/', '')  # Without media prefix if already included
-                            ]
-                            
-                            for key in s3_key_variations:
-                                try:
-                                    s3.head_object(
-                                        Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                                        Key=key
-                                    )
-                                    s3_found = True
-                                    print(f"S3 validation successful for key: {key}")
-                                    # Store the correct S3 key for later use
-                                    data_file.original_file_path = key
-                                    data_file.save(update_fields=['original_file_path'])
-                                    break
-                                except ClientError as e:
-                                    if e.response['Error']['Code'] == '404':
-                                        print(f"Key not found in S3: {key}")
-                                    else:
-                                        print(f"S3 error for key {key}: {str(e)}")
-                            
-                            if not s3_found:
-                                print("WARNING: File validated with Django storage but not found directly in S3")
-                                file_exists = False
-                        except Exception as e:
-                            print(f"Error during direct S3 validation: {str(e)}")
                 except Exception as e:
                     print(f"Error checking file existence: {str(e)}")
                     file_exists = False
@@ -393,27 +347,21 @@ def file_upload(request, slug):
                 # Trigger file processing for vector store
                 from django.conf import settings
                 
-                # Only process file if it exists in storage
-                if file_exists:
-                    # Process file for vector store - use either synchronous or normal call
-                    try:
-                        from core.tasks import process_file_for_vector_store
-                        
-                        # Choose processing method based on settings
-                        if getattr(settings, 'USE_SYNCHRONOUS_TASKS', False):
-                            print(f"Running synchronous vector store processing for file ID: {data_file.id}")
-                        else:
-                            print(f"Called vector store processing for file ID: {data_file.id}")
-                        
-                        # Call the processing function only once
-                        process_file_for_vector_store(data_file.id)
-                    except Exception as e:
-                        error_msg = f"Vector store processing error: {str(e)}"
-                        print(error_msg)
-                        data_file.vector_store_status = 'failed'
-                        data_file.save(update_fields=['vector_store_status'])
-                else:
-                    print(f"WARNING: Skipping vector store processing for file ID: {data_file.id} - file doesn't exist in storage")
+                # Process file for vector store - use either synchronous or normal call
+                try:
+                    from core.tasks import process_file_for_vector_store
+                    
+                    # Choose processing method based on settings
+                    if getattr(settings, 'USE_SYNCHRONOUS_TASKS', False):
+                        print(f"Running synchronous vector store processing for file ID: {data_file.id}")
+                    else:
+                        print(f"Called vector store processing for file ID: {data_file.id}")
+                    
+                    # Call the processing function only once
+                    process_file_for_vector_store(data_file.id)
+                except Exception as e:
+                    error_msg = f"Vector store processing error: {str(e)}"
+                    print(error_msg)
                     data_file.vector_store_status = 'failed'
                     data_file.save(update_fields=['vector_store_status'])
                 

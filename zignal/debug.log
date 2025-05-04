@@ -2642,3 +2642,15 @@ INFO 2025-05-04 16:50:21,419 openai_service Uploaded file avräkningsnota_drago
 INFO 2025-05-04 16:50:22,219 openai_service Added file to vector store batch: vsfb_f14b3efe2e7a45fc99ec5d66c4d75c7a
 INFO 2025-05-04 16:50:22,223 tasks File 25 added to vector store with ID: file-NpTS9uJr2DH2xyawBkYUHS
 INFO 2025-05-04 16:50:22,310 tasks Temporary file deleted
+INFO 2025-05-04 17:10:21,673 tasks ====== STARTING VECTOR STORE PROCESSING FOR FILE ID: 27 ======
+INFO 2025-05-04 17:10:21,675 tasks Processing file for vector store: 27 (Attempt 1)
+INFO 2025-05-04 18:11:54,381 tasks Processing file for vector store: 28 (Attempt 1)
+INFO 2025-05-04 18:11:54,386 tasks File name: Bowter_offert_66, Storage path: datasilo/company/jonas-company/f8b770d8-0cd7-4896-97c5-33679dc60b67.pdf
+INFO 2025-05-04 18:11:54,425 tasks Using S3 storage: False (Storage class: FileSystemStorage)
+INFO 2025-05-04 18:11:54,425 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 18:11:54,426 tasks File downloaded successfully to /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmposewqd4w.pdf (42331 bytes)
+INFO 2025-05-04 18:11:54,426 tasks Core processing function for file: 28, S3: False
+INFO 2025-05-04 18:11:55,669 openai_service Uploaded file Bowter_offert_66 to OpenAI with ID: file-GiDCTzqCbBL7dzrRtnTLgb
+INFO 2025-05-04 18:11:56,792 openai_service Added file to vector store batch: vsfb_4b1e6b24d18c4da3a16efc06e2e2d8ba
+INFO 2025-05-04 18:11:56,796 tasks File 28 added to vector store with ID: file-GiDCTzqCbBL7dzrRtnTLgb
+INFO 2025-05-04 18:11:56,851 tasks Temporary file deleted
