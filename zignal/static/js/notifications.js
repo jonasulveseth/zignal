@@ -1,7 +1,34 @@
 /**
  * Zignal Notifications System
  * HTTP-based notifications with polling (no WebSockets)
+ * Version: 2.0
  */
+
+// Handle legacy code situations - if this file is loaded but older JS is cached
+if (typeof WebSocket !== 'undefined') {
+    // Check if there's an old WebSocket connection attempt
+    window.addEventListener('error', function(event) {
+        if (event && event.target && event.target.tagName === 'SCRIPT' && 
+            event.target.src && event.target.src.includes('notifications.js')) {
+            console.log('Detected potential notification system cache issue. Reloading page...');
+            // Force reload the page to get the latest version
+            setTimeout(() => window.location.reload(true), 1000);
+            
+            // Show a toast or notification to the user
+            const toast = document.createElement('div');
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.right = '20px';
+            toast.style.backgroundColor = '#4CAF50';
+            toast.style.color = 'white';
+            toast.style.padding = '16px';
+            toast.style.borderRadius = '4px';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = 'Updating notification system... Page will reload shortly.';
+            document.body.appendChild(toast);
+        }
+    });
+}
 
 class NotificationManager {
     constructor(options = {}) {

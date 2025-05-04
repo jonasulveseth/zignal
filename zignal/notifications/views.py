@@ -138,4 +138,19 @@ def get_notification_count(request):
     return JsonResponse({
         'total_count': total_count,
         'unread_count': unread_count
-    }) 
+    })
+
+
+def handle_legacy_websocket(request):
+    """
+    Handle legacy WebSocket connection attempts.
+    This is a transitional endpoint to help clients gracefully migrate to the new polling system.
+    
+    Returns:
+        JsonResponse: JSON response with migration instructions
+    """
+    logger.info("Legacy WebSocket connection attempt handled")
+    return JsonResponse({
+        'status': 'update_required',
+        'message': 'WebSocket notifications have been replaced with HTTP polling. Please reload the page to use the new system.'
+    }, status=200)  # Return 200 instead of 404 to avoid console errors 

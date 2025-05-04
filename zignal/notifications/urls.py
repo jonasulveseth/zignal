@@ -8,4 +8,5 @@ urlpatterns = [
     path('api/notifications/count/', views.get_notification_count, name='get_notification_count'),
     path('api/notifications/mark-all-read/', views.mark_all_read, name='mark_all_read'),
     path('api/notifications/<uuid:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
+    path('ws/notifications/', views.handle_legacy_websocket, name='legacy_websocket'),
 ] 

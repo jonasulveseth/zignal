@@ -263,30 +263,42 @@ def toggle_user_type(request):
 
 @login_required
 def redirect_to_company_silo(request):
-    """Redirect to the first data silo for the company"""
+    """Redirect to the company's data silo page"""
     user = request.user
-    company = None
+    profile = Profile.objects.filter(user=user).first()
     
-    # Get the user's company
-    if hasattr(user, 'profile') and user.profile and hasattr(user.profile, 'company'):
-        company = user.profile.company
+    # Get the company
+    company = None
+    if profile and hasattr(profile, 'company'):
+        company = profile.company
     
     if not company:
         company_relation = user.company_relations.first()
         if company_relation:
             company = company_relation.company
     
-    if not company:
-        messages.error(request, "You need to have a company before accessing data silos.")
-        return redirect('dashboard')
-    
-    # Find the first data silo for this company
-    from datasilo.models import DataSilo
-    data_silo = DataSilo.objects.filter(company=company).first()
-    
-    if data_silo:
-        return redirect('datasilo:silo_detail', slug=data_silo.slug)
+    if company:
+        # Redirect to company silo
+        return redirect('datasilo:company_silos', company_id=company.id)
     else:
-        messages.info(request, "No data silos found for your company. Creating a default one.")
-        # If no data silo exists, redirect to the data silo list (which should offer to create one)
-        return redirect('datasilo:silo_list') 
+        # No company found, redirect to dashboard
+        messages.warning(request, "You need to set up a company first.")
+        return redirect('dashboard')
+
+def redirect_websocket(request):
+    """
+    Handle legacy WebSocket connections.
+    This is a transitional endpoint that responds to old WebSocket connection attempts
+    from clients that haven't been updated yet.
+    
+    Returns:
+        JsonResponse: Information about the new notification system
+    """
+    import logging
+    logger = logging.getLogger('django')
+    logger.info("Legacy WebSocket connection attempt handled at root level")
+    
+    return JsonResponse({
+        'status': 'updated_system',
+        'message': 'WebSocket notifications have been replaced with HTTP polling. Please reload the page to use the new system.'
+    }, status=200)  # Return 200 instead of 404 to reduce error noise in logs 
