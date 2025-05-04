@@ -141,7 +141,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # S3 Storage Settings
 USE_S3 = os.environ.get('USE_S3', '') == 'TRUE'
 
-# Only use S3 storage in production (not DEBUG) or when explicitly enabled with USE_S3=TRUE
 if not DEBUG or USE_S3:
     print(f"Using S3 for file storage. (USE_S3={USE_S3}, DEBUG={DEBUG})")
     # Use S3 for file storage in production or if explicitly enabled
@@ -154,33 +153,24 @@ if not DEBUG or USE_S3:
     AWS_DEFAULT_ACL = os.environ.get('AWS_DEFAULT_ACL', 'private')  # Files are private by default
     AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', None)
     AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'eu-north-1')
-    
-    # Optional S3 settings from environment
-    AWS_LOCATION = os.environ.get('AWS_LOCATION', 'media')  # Default to 'media' folder in bucket
-    
-    # Get object parameters from environment if set
-    aws_s3_object_params = os.environ.get('AWS_S3_OBJECT_PARAMETERS', None)
-    if aws_s3_object_params:
-        import json
-        try:
-            AWS_S3_OBJECT_PARAMETERS = json.loads(aws_s3_object_params)
-        except json.JSONDecodeError:
-            AWS_S3_OBJECT_PARAMETERS = {
-                'CacheControl': 'max-age=86400',  # 1 day cache
-            }
-    else:
-        AWS_S3_OBJECT_PARAMETERS = {
-            'CacheControl': 'max-age=86400',  # 1 day cache
-        }
-    
-    AWS_QUERYSTRING_AUTH = True  # Generate authenticated URLs to secure access to files
+    AWS_LOCATION = os.environ.get('AWS_LOCATION', 'media')
+    AWS_IS_GZIPPED = True
     AWS_S3_FILE_OVERWRITE = False  # Don't overwrite files with the same name
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_S3_ADDRESSING_STYLE = 'virtual'  # Use virtual-hosted style URLs
     
-    # Update MEDIA_URL to use S3
-    if AWS_S3_CUSTOM_DOMAIN:
-        MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
-    else:
-        MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/{AWS_LOCATION}/'
+    # Improve error handling for S3
+    AWS_S3_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',  # 1 day cache
+    }
+    
+    # Debug S3 on Heroku
+    if os.environ.get('DYNO'):
+        print(f"S3 Storage: bucket={AWS_STORAGE_BUCKET_NAME}, region={AWS_S3_REGION_NAME}, location={AWS_LOCATION}")
+        
+    # Media config with S3
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/" if AWS_S3_CUSTOM_DOMAIN else f"/{AWS_LOCATION}/"
 else:
     print("Using local file storage for development.")
 
