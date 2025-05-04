@@ -189,13 +189,17 @@ if not DEBUG or USE_S3:
             """
             if name.startswith('/'):
                 name = name[1:]
+                
+            # Ensure media/ prefix if AWS_LOCATION is 'media'
+            if AWS_LOCATION == 'media' and not name.startswith('media/'):
+                name = f'media/{name}'
+                
             return super()._normalize_name(name)
     
     # Make storage class directly available to apps
     MEDIA_STORAGE_CLASS = MediaStorage
     
     # Override default storage globally (must do this after MediaStorage class is defined)
-    from django.conf import settings
     from django.core.files.storage import default_storage
     import django
     
@@ -203,10 +207,11 @@ if not DEBUG or USE_S3:
     if django.apps.apps.ready:
         # App registry is ready, we can update default_storage
         try:
-            from django.utils.functional import LazyObject
+            # Initialize a storage instance
+            s3_storage = MediaStorage()
             
-            # Re-initialize default_storage with our MediaStorage
-            default_storage._wrapped = MediaStorage()
+            # Force default_storage to use our S3 storage
+            default_storage._wrapped = s3_storage
             
             print("Successfully forced S3 storage for all file operations")
         except Exception as e:

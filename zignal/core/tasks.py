@@ -274,107 +274,122 @@ def process_file_for_vector_store(self, file_id):
                 "error": f"OpenAI service not available: {str(e)}"
             }
         
-        # Better S3 detection method
-        using_s3 = False
+        # Check what type of storage is being used
+        is_s3_storage = False
         
-        # Get AWS credentials first (we'll need these throughout the function)
+        # Check if default_storage is S3Boto3Storage or MediaStorage
+        storage_class_name = default_storage.__class__.__name__
+        if hasattr(default_storage, '_wrapped'):
+            storage_class_name = default_storage._wrapped.__class__.__name__
+        
+        is_s3_storage = 'S3' in storage_class_name or 'Boto' in storage_class_name or 'Media' in storage_class_name
+        logger.info(f"Using S3 storage: {is_s3_storage} (Storage class: {storage_class_name})")
+        
+        # Also check environment variables as a backup check
+        if not is_s3_storage and os.environ.get('USE_S3') == 'TRUE':
+            logger.info("Forcing S3 detection from USE_S3 environment variable")
+            is_s3_storage = True
+        
+        # Get AWS credentials 
         aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
         aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
         aws_region = os.environ.get('AWS_S3_REGION_NAME', 'eu-west-1')
         aws_bucket = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'zignalse')
         aws_location = os.environ.get('AWS_LOCATION', 'media')
         
-        try:
-            # Use URL method which is more reliable
-            test_url = default_storage.url('test-path')
-            using_s3 = 's3.amazonaws.com' in test_url or aws_bucket in test_url
-            logger.info(f"S3 detection via URL: {using_s3}")
-        except Exception as e:
-            # Fallback to traditional method
-            storage_type = default_storage.__class__.__name__
-            using_s3 = 'S3' in storage_type or 'Boto' in storage_type
-            logger.info(f"S3 detection via class name: {using_s3}, Storage type: {storage_type}")
+        logger.info(f"AWS settings: bucket={aws_bucket}, region={aws_region}, location={aws_location}")
         
-        # Hardcode for production if we're pretty sure S3 is being used
-        if not settings.DEBUG and os.environ.get('USE_S3') == 'TRUE':
-            logger.info("Forcing S3 detection based on environment variables")
-            using_s3 = True
-        
-        # If not using S3, check if we should be (try to get direct S3 storage)
-        if not using_s3 and hasattr(settings, 'MEDIA_STORAGE_CLASS'):
-            logger.info("Detected MEDIA_STORAGE_CLASS in settings, will use for direct S3 operations")
-            using_s3 = True
-        
-        # Create a direct path for files
-        # Using MEDIA_STORAGE_CLASS to directly access the file if available
+        # Create a direct path for files using S3 storage class if available
         direct_s3_access = False
         s3_storage = None
         s3_bucket = None
         s3_key = None
         
-        if using_s3 and hasattr(settings, 'MEDIA_STORAGE_CLASS'):
+        if is_s3_storage:
             try:
-                # Get an instance of the storage class
-                s3_storage = settings.MEDIA_STORAGE_CLASS()
+                # Get the S3 storage class - try from settings or use default_storage
+                if hasattr(settings, 'MEDIA_STORAGE_CLASS'):
+                    s3_storage = settings.MEDIA_STORAGE_CLASS()
+                elif hasattr(default_storage, '_wrapped') and 'S3' in default_storage._wrapped.__class__.__name__:
+                    s3_storage = default_storage._wrapped
                 
-                # Get the file path (which is already the key)
-                original_key = data_file.file.name
-                logger.info(f"Original S3 key from file: {original_key}")
-                
-                # List of possible S3 key formats to try
-                possible_keys = []
-                
-                # Original key
-                possible_keys.append(original_key)
-                
-                # With media/ prefix if not already there
-                if not original_key.startswith('media/'):
-                    possible_keys.append(f"media/{original_key}")
-                
-                # Without media/ prefix if it's there
-                if original_key.startswith('media/'):
-                    possible_keys.append(original_key[6:])  # Remove 'media/'
-                
-                # Try with AWS_LOCATION
-                if aws_location and not original_key.startswith(f"{aws_location}/"):
-                    possible_keys.append(f"{aws_location}/{original_key}")
+                if s3_storage:
+                    # Get the original file path (key)
+                    original_key = data_file.file.name
+                    logger.info(f"Original file path: {original_key}")
                     
-                    # Also try with the location but without media/ if it has that
+                    # Generate all possible S3 key formats to try
+                    possible_keys = []
+                    
+                    # 1. Original key
+                    possible_keys.append(original_key)
+                    
+                    # 2. With media/ prefix if not already there
+                    if not original_key.startswith('media/'):
+                        possible_keys.append(f"media/{original_key}")
+                    
+                    # 3. Without media/ prefix if it's there
                     if original_key.startswith('media/'):
-                        possible_keys.append(f"{aws_location}/{original_key[6:]}")
-                
-                logger.info(f"Will try these S3 keys for direct access: {possible_keys}")
-                
-                # First check which key exists
-                found_key = None
-                for key in possible_keys:
-                    try:
-                        if s3_storage.exists(key):
-                            found_key = key
-                            logger.info(f"Found existing S3 object with key: {key}")
-                            break
-                    except Exception as e:
-                        logger.warning(f"Error checking if key exists: {key} - {str(e)}")
-                
-                if found_key:
-                    s3_key = found_key
-                else:
-                    # If no key was found to exist, use the first one with aws_location prefix if specified
+                        possible_keys.append(original_key[6:])  # Remove 'media/'
+                    
+                    # 4. Try with AWS_LOCATION prefix
+                    if aws_location and not original_key.startswith(f"{aws_location}/"):
+                        possible_keys.append(f"{aws_location}/{original_key}")
+                        
+                        # 5. Also try with location but without media/ if it has that
+                        if original_key.startswith('media/'):
+                            possible_keys.append(f"{aws_location}/{original_key[6:]}")
+                    
+                    # Remove duplicates but preserve order
+                    possible_keys = list(dict.fromkeys(possible_keys))
+                    logger.info(f"Will try these S3 keys for direct access: {possible_keys}")
+                    
+                    # First check which key exists
+                    found_key = None
                     for key in possible_keys:
-                        if aws_location and key.startswith(f"{aws_location}/"):
-                            s3_key = key
-                            logger.info(f"Using key with AWS_LOCATION prefix: {s3_key}")
-                            break
+                        try:
+                            if s3_storage.exists(key):
+                                found_key = key
+                                logger.info(f"Found existing S3 object with key: {key}")
+                                break
+                        except Exception as e:
+                            logger.warning(f"Error checking if key exists: {key} - {str(e)}")
+                    
+                    if found_key:
+                        s3_key = found_key
+                        s3_bucket = aws_bucket
+                        direct_s3_access = True
+                        logger.info(f"Using direct S3 access with bucket={s3_bucket}, key={s3_key}")
                     else:
-                        # Default to original key if no better option found
-                        s3_key = original_key
-                        logger.info(f"No existing key found, using original: {s3_key}")
-                
-                s3_bucket = aws_bucket
-                
-                # Check if we can access the file directly
-                direct_s3_access = True
-                logger.info(f"Will use direct S3 access with bucket={s3_bucket}, key={s3_key}")
+                        # If we couldn't find the file with the storage class, try direct boto3
+                        logger.warning("File not found with storage.exists, trying direct boto3 access")
+                        import boto3
+                        s3_client = boto3.client(
+                            's3',
+                            aws_access_key_id=aws_access_key,
+                            aws_secret_access_key=aws_secret_key,
+                            region_name=aws_region
+                        )
+                        
+                        # Try each key with boto3
+                        for key in possible_keys:
+                            try:
+                                # Use head_object to check if key exists
+                                s3_client.head_object(Bucket=aws_bucket, Key=key)
+                                found_key = key
+                                logger.info(f"Found existing S3 object with boto3 key: {key}")
+                                break
+                            except Exception as e:
+                                logger.warning(f"Boto3 head_object failed for key: {key} - {str(e)}")
+                        
+                        if found_key:
+                            s3_key = found_key
+                            s3_bucket = aws_bucket
+                            direct_s3_access = True
+                            logger.info(f"Using direct boto3 S3 access with bucket={s3_bucket}, key={s3_key}")
+                        else:
+                            logger.error("Could not find file in S3 with any path")
+                            # We'll fall back to download method below
             except Exception as e:
                 logger.error(f"Error setting up direct S3 access: {str(e)}")
                 direct_s3_access = False
@@ -387,19 +402,19 @@ def process_file_for_vector_store(self, file_id):
             "data_silo": data_file.data_silo.name if data_file.data_silo else None,
             "company": company.name if company else None,
             "uploaded_at": str(data_file.created_at),
-            "source": "s3" if using_s3 else "local"
+            "source": "s3" if is_s3_storage else "local"
         }
         
         # We can skip downloading if using direct S3 access
         if not direct_s3_access:
-            # Get file path - need different approaches for local vs S3 storage
+            # Download the file to a temporary location
             temp_file = None
             file_ext = os.path.splitext(data_file.file.name)[1]
             try:
                 temp_file = tempfile.NamedTemporaryFile(suffix=file_ext, delete=False)
                 
                 # Download the file content
-                if using_s3:
+                if is_s3_storage:
                     # Use boto3 to download from S3
                     import boto3
                     s3_client = boto3.client(
@@ -434,7 +449,8 @@ def process_file_for_vector_store(self, file_id):
                         if file_key.startswith('media/'):
                             possible_keys.append(f"{aws_location}/{file_key[6:]}")
                     
-                    # Log all paths we're going to try
+                    # Remove duplicates but preserve order
+                    possible_keys = list(dict.fromkeys(possible_keys))
                     logger.info(f"Will try these S3 paths: {possible_keys}")
                     
                     # Try each possible key until one works
@@ -446,6 +462,13 @@ def process_file_for_vector_store(self, file_id):
                             logger.info(f"Attempting to download with key: {key}")
                             s3_client.download_file(aws_bucket, key, temp_file.name)
                             logger.info(f"Successfully downloaded using key: {key}")
+                            
+                            # Update the file record with the correct path if it's different from what we have
+                            if key != file_key:
+                                logger.info(f"Updating file record with correct path: {key}")
+                                data_file.file.name = key
+                                data_file.save(update_fields=['file'])
+                            
                             download_success = True
                             break
                         except Exception as e:
@@ -475,12 +498,36 @@ def process_file_for_vector_store(self, file_id):
                             if response.get('KeyCount', 0) > 0:
                                 keys = [obj['Key'] for obj in response.get('Contents', [])]
                                 logger.info(f"Found {len(keys)} objects with similar prefix: {keys}")
+                                
+                                # Find the closest match by filename
+                                filename = os.path.basename(file_key)
+                                closest_match = None
+                                for key in keys:
+                                    if filename in key:
+                                        closest_match = key
+                                        break
+                                
+                                if closest_match:
+                                    logger.info(f"Found closest match: {closest_match}, attempting download")
+                                    try:
+                                        s3_client.download_file(aws_bucket, closest_match, temp_file.name)
+                                        logger.info(f"Successfully downloaded using closest match: {closest_match}")
+                                        
+                                        # Update the file record with the correct path
+                                        logger.info(f"Updating file record with closest match path: {closest_match}")
+                                        data_file.file.name = closest_match
+                                        data_file.save(update_fields=['file'])
+                                        
+                                        download_success = True
+                                    except Exception as e:
+                                        logger.error(f"Failed to download closest match: {str(e)}")
                             else:
                                 logger.warning(f"No objects found with prefix: {search_prefix}")
                         except Exception as list_err:
                             logger.error(f"Error listing objects: {str(list_err)}")
                         
-                        raise last_error
+                        if not download_success:
+                            raise last_error
                 else:
                     # For local storage, just open and read the file
                     with default_storage.open(data_file.file.name, 'rb') as f:
