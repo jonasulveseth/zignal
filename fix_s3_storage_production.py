@@ -91,7 +91,7 @@ def fix_s3_storage():
 
 def fix_file_paths():
     """Fix existing file paths in the database to match S3 storage requirements"""
-    from datasilo.models import DataFile
+    from zignal.datasilo.models import DataFile
     
     logger.info("Fixing existing file paths in database...")
     
