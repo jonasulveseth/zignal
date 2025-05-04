@@ -196,7 +196,6 @@ if not DEBUG or USE_S3:
     
     # Override default storage globally (must do this after MediaStorage class is defined)
     from django.conf import settings
-    from django.core.files.storage import get_storage_class
     from django.core.files.storage import default_storage
     import django
     
@@ -205,7 +204,6 @@ if not DEBUG or USE_S3:
         # App registry is ready, we can update default_storage
         try:
             from django.utils.functional import LazyObject
-            from django.core.files.storage import DefaultStorage
             
             # Re-initialize default_storage with our MediaStorage
             default_storage._wrapped = MediaStorage()
