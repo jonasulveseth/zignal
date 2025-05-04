@@ -1,0 +1,45 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Zignal - Early Access Request Received{% endblock %}
+
+{% block content %}
+<section class="min-h-screen pt-24 pb-24">
+  <div class="max-w-3xl mx-auto px-6 md:px-8">
+    <div class="glass-card p-8 md:p-12 rounded-2xl text-center">
+      <div class="mb-8">
+        <div class="inline-flex items-center justify-center w-24 h-24 mx-auto bg-green-100 rounded-full mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        
+        <h1 class="text-3xl md:text-4xl font-bold mb-4 text-gray-800">
+          Thanks for your interest!
+        </h1>
+        
+        <p class="text-xl text-gray-600 mb-6">
+          We've received your early access request.
+        </p>
+      </div>
+      
+      <div class="prose prose-blue max-w-none mb-8">
+        <p>
+          We're excited to have you join our exclusive early access program. Our team will review your information and reach out to you soon with more details.
+        </p>
+        <p>
+          In the meantime, keep an eye on your inbox for updates from Zignal AI.
+        </p>
+      </div>
+      
+      <div class="mt-8">
+        <a 
+          href="{% url 'home' %}" 
+          class="inline-block py-3 px-6 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors duration-200"
+        >
+          Return to Homepage
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %} 

@@ -74,6 +74,9 @@ urlpatterns = [
     
     # Mail Receiver webhook URLs
     path('mail/', include('mail_receiver.urls')),
+    
+    # Contact form URLs
+    path('', include('zigcontact.urls')),
 ]
 
 # Serve media files in development

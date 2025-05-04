@@ -184,3 +184,26 @@ class Invitation(models.Model):
             html_message=html_message,
             fail_silently=False,
         )
+
+class EarlySignup(models.Model):
+    """
+    Model for capturing early signup invites from the landing page
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField(unique=True)
+    company = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    contacted = models.BooleanField(default=False)
+    
+    class Meta:
+        verbose_name = "Early Signup"
+        verbose_name_plural = "Early Signups"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} - {self.email}"
+    
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}"

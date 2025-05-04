@@ -1,0 +1,87 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Zignal - Early Access Signup{% endblock %}
+
+{% block content %}
+<section class="min-h-screen pt-24 pb-24">
+  <div class="max-w-3xl mx-auto px-6 md:px-8">
+    <div class="glass-card p-8 md:p-12 rounded-2xl">
+      <h1 class="text-3xl md:text-4xl font-bold mb-8 text-center text-gray-800">
+        Sign up for early access
+      </h1>
+      <p class="text-gray-600 mb-8 text-center">
+        Join our exclusive early access program to be among the first to try Zignal AI - the future of investment tracking and management.
+      </p>
+      
+      {% if messages %}
+      <div class="mb-6">
+        {% for message in messages %}
+        <div class="p-4 mb-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      
+      <form method="POST" class="space-y-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label for="first_name" class="block text-sm font-medium text-gray-700">First Name</label>
+            <input
+              type="text"
+              id="first_name"
+              name="first_name"
+              class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+          
+          <div class="space-y-2">
+            <label for="last_name" class="block text-sm font-medium text-gray-700">Last Name</label>
+            <input
+              type="text"
+              id="last_name"
+              name="last_name"
+              class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+        </div>
+        
+        <div class="space-y-2">
+          <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+        
+        <div class="space-y-2">
+          <label for="company" class="block text-sm font-medium text-gray-700">Company</label>
+          <input
+            type="text"
+            id="company"
+            name="company"
+            class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+        
+        <div class="pt-4">
+          <button
+            type="submit"
+            class="w-full py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors duration-200"
+          >
+            Sign Up for Early Access
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %} 

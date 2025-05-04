@@ -91,6 +91,7 @@ INSTALLED_APPS = [
     'profiles',
     'mail_receiver',
     'core',
+    'zigcontact',
 ]
 
 MIDDLEWARE = [

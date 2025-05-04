@@ -10,4 +10,8 @@ urlpatterns = [
     path('invitations/<uuid:uuid>/resend/', views.resend_invitation, name='resend_invitation'),
     path('companies/<int:company_id>/invite/', views.create_company_invitation, name='create_company_invitation'),
     path('projects/<int:project_id>/invite/', views.create_project_invitation, name='create_project_invitation'),
+    
+    # Early signup URLs
+    path('early-signup/', views.early_signup_form, name='early_signup_form'),
+    path('early-signup/success/', views.early_signup_success, name='early_signup_success'),
 ] 

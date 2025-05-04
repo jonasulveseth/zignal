@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 
-from .models import Invitation
+from .models import Invitation, EarlySignup
 from companies.models import Company
 from projects.models import Project
 from zignal.config.permissions import company_role_required, project_role_required
@@ -242,3 +242,38 @@ def resend_invitation(request, uuid):
     
     messages.success(request, f"Invitation resent to {invitation.email}")
     return redirect('invitation_list')
+
+def early_signup_form(request):
+    """View for displaying and processing the early signup form"""
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        company = request.POST.get('company')
+        
+        # Basic validation
+        if not all([first_name, last_name, email, company]):
+            messages.error(request, "All fields are required")
+            return render(request, 'invitations/early_signup_form.html')
+        
+        # Check if email already exists
+        if EarlySignup.objects.filter(email=email).exists():
+            messages.info(request, "This email is already registered for early access")
+            return redirect('early_signup_success')
+        
+        # Create early signup record
+        EarlySignup.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            company=company
+        )
+        
+        # Redirect to success page
+        return redirect('early_signup_success')
+    
+    return render(request, 'invitations/early_signup_form.html')
+
+def early_signup_success(request):
+    """Success page after early signup submission"""
+    return render(request, 'invitations/early_signup_success.html')
