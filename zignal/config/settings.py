@@ -180,12 +180,39 @@ if not DEBUG or USE_S3:
         location = AWS_LOCATION
         file_overwrite = AWS_S3_FILE_OVERWRITE
         default_acl = AWS_DEFAULT_ACL
+        
+        def _normalize_name(self, name):
+            """
+            Override to handle both absolute and relative paths
+            This ensures consistent storage path construction 
+            regardless of what Django passes in
+            """
+            if name.startswith('/'):
+                name = name[1:]
+            return super()._normalize_name(name)
     
-    # Make sure this is available to apps at import time
+    # Make storage class directly available to apps
     MEDIA_STORAGE_CLASS = MediaStorage
     
-    # Note: We can't directly override default_storage here because it's a LazyObject
-    # Django will properly initialize it when first used
+    # Override default storage globally (must do this after MediaStorage class is defined)
+    from django.conf import settings
+    from django.core.files.storage import get_storage_class
+    from django.core.files.storage import default_storage
+    import django
+    
+    # If Django is still initializing, do this later
+    if django.apps.apps.ready:
+        # App registry is ready, we can update default_storage
+        try:
+            from django.utils.functional import LazyObject
+            from django.core.files.storage import DefaultStorage
+            
+            # Re-initialize default_storage with our MediaStorage
+            default_storage._wrapped = MediaStorage()
+            
+            print("Successfully forced S3 storage for all file operations")
+        except Exception as e:
+            print(f"Error forcing S3 storage: {str(e)}")
 else:
     print("Using local file storage for development.")
 
