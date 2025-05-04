@@ -141,6 +141,8 @@ def process_file_for_vector_store(self, file_id):
     from django.utils import timezone
     import os
     import logging
+    import tempfile
+    from django.core.files.storage import default_storage
     
     logger = logging.getLogger(__name__)
     
@@ -191,7 +193,10 @@ def process_file_for_vector_store(self, file_id):
                 "success": False,
                 "error": f"File with ID {file_id} not found"
             }
-            
+        
+        # Log file information
+        logger.info(f"File name: {data_file.name}, Storage path: {data_file.file.name}")
+        
         # Check if already processed
         if data_file.vector_store_file_id:
             logger.info(f"File already has a vector store ID: {data_file.vector_store_file_id}")
@@ -269,6 +274,55 @@ def process_file_for_vector_store(self, file_id):
                 "error": f"OpenAI service not available: {str(e)}"
             }
         
+        # Log storage information
+        storage_type = default_storage.__class__.__name__
+        using_s3 = 'S3' in storage_type or 'Boto' in storage_type
+        logger.info(f"Storage type: {storage_type}, Using S3: {using_s3}")
+        
+        # If using S3, verify bucket and credentials
+        if using_s3:
+            try:
+                import boto3
+                from botocore.exceptions import ClientError
+                
+                s3 = boto3.client(
+                    's3',
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                    region_name=settings.AWS_S3_REGION_NAME
+                )
+                
+                # Check if bucket exists
+                try:
+                    s3.head_bucket(Bucket=settings.AWS_STORAGE_BUCKET_NAME)
+                    logger.info(f"S3 bucket '{settings.AWS_STORAGE_BUCKET_NAME}' exists")
+                    
+                    # Try to verify file existence directly in S3
+                    s3_path = data_file.file.name
+                    if settings.AWS_LOCATION and not s3_path.startswith(settings.AWS_LOCATION):
+                        s3_path = f"{settings.AWS_LOCATION}/{s3_path}"
+                    
+                    try:
+                        s3.head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=s3_path)
+                        logger.info(f"S3 object exists at '{s3_path}'")
+                    except ClientError as e:
+                        if e.response['Error']['Code'] == '404':
+                            # If not found with AWS_LOCATION prefix, try without it
+                            if settings.AWS_LOCATION and s3_path.startswith(settings.AWS_LOCATION):
+                                try:
+                                    s3_path = data_file.file.name
+                                    s3.head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=s3_path)
+                                    logger.info(f"S3 object exists at '{s3_path}' (without location prefix)")
+                                except ClientError as e2:
+                                    logger.error(f"S3 object not found at '{s3_path}': {e2.response['Error']['Message']}")
+                            else:
+                                logger.error(f"S3 object not found at '{s3_path}': {e.response['Error']['Message']}")
+                    
+                except ClientError as e:
+                    logger.error(f"S3 bucket error: {e.response['Error']['Message']}")
+            except Exception as e:
+                logger.error(f"Error verifying S3 settings: {str(e)}")
+        
         # Get file path - need different approaches for local vs S3 storage
         temp_file = None
         file_path = None
@@ -285,14 +339,30 @@ def process_file_for_vector_store(self, file_id):
                 # Check if the file exists in storage
                 if not default_storage.exists(data_file.file.name):
                     logger.error(f"File not found in storage: {data_file.file.name}")
-                    DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
-                    return {
-                        "success": False,
-                        "error": "File not found in storage"
-                    }
+                    
+                    # If using S3, check both with and without AWS_LOCATION prefix
+                    if using_s3 and settings.AWS_LOCATION:
+                        alt_path = f"{settings.AWS_LOCATION}/{data_file.file.name}"
+                        if default_storage.exists(alt_path):
+                            logger.info(f"File found with location prefix: {alt_path}")
+                            data_file.file.name = alt_path
+                        else:
+                            logger.error(f"File not found with location prefix either: {alt_path}")
+                            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+                            return {
+                                "success": False,
+                                "error": "File not found in storage"
+                            }
+                    else:
+                        DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+                        return {
+                            "success": False,
+                            "error": "File not found in storage"
+                        }
                 
                 # Get file size from storage for checking
                 file_size = default_storage.size(data_file.file.name)
+                logger.info(f"File size in storage: {file_size} bytes")
                 
                 # Create temp file with the same extension
                 file_ext = os.path.splitext(data_file.file.name)[1]

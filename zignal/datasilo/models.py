@@ -8,10 +8,33 @@ def file_upload_path(instance, filename):
     """Generate a unique file path for uploaded files"""
     ext = filename.split('.')[-1]
     unique_id = str(uuid.uuid4())
-    if instance.project:
-        return f"datasilo/{instance.project.company.slug}/{instance.project.slug}/{unique_id}.{ext}"
+    
+    # Handle the case where company or project might not be set yet
+    company_slug = None
+    project_slug = None
+    
+    # Get company slug
+    if hasattr(instance, 'company') and instance.company:
+        company_slug = instance.company.slug
+    elif hasattr(instance, 'data_silo') and instance.data_silo and instance.data_silo.company:
+        company_slug = instance.data_silo.company.slug
+    
+    # Get project slug
+    if hasattr(instance, 'project') and instance.project:
+        project_slug = instance.project.slug
+    elif hasattr(instance, 'data_silo') and instance.data_silo and instance.data_silo.project:
+        project_slug = instance.data_silo.project.slug
+    
+    # Handle case when neither company nor project is available
+    if not company_slug and not project_slug:
+        # Use a default path with just the unique ID
+        return f"datasilo/files/{unique_id}.{ext}"
+    
+    # Create path based on available information
+    if project_slug:
+        return f"datasilo/{company_slug}/{project_slug}/{unique_id}.{ext}"
     else:
-        return f"datasilo/company/{instance.company.slug}/{unique_id}.{ext}"
+        return f"datasilo/company/{company_slug}/{unique_id}.{ext}"
 
 
 class DataSilo(models.Model):
