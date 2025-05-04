@@ -53,17 +53,6 @@
         </div>
       {% endif %}
 
-      <!-- Display messages -->
-      {% if messages %}
-        <div class="mb-4">
-          {% for message in messages %}
-            <div class="{% if message.tags == 'error' %}bg-red-50 border border-red-200 text-red-800{% else %}bg-green-50 border border-green-200 text-green-800{% endif %} rounded-md p-4 mb-2">
-              {{ message }}
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-
       <!-- Upload form -->
       <form method="post" enctype="multipart/form-data" id="upload-form">
         {% csrf_token %}
