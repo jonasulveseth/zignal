@@ -1,11 +1,22 @@
 """
-This file is a compatibility layer that imports settings from the main config.
-It ensures backward compatibility with code that still imports from zignal.zignal.config.settings.
+DEPRECATED - This file is a temporary compatibility layer for transition.
+All settings have been moved to zignal.config.settings.
 """
 
-# Show a warning message
+import os
 import sys
-print("WARNING: Using zignal/zignal/config/settings.py is deprecated. Update imports to use zignal.config.settings", file=sys.stderr)
 
-# Import all settings from the consolidated settings
+# Display warning
+import warnings
+warnings.warn("Using zignal/zignal/config/settings.py is deprecated. Update imports to use zignal.config.settings", 
+              DeprecationWarning, stacklevel=2)
+
+# Force DEBUG to True for development
+os.environ['DEBUG'] = 'True'
+
+# Import the real settings
 from zignal.config.settings import *
+
+# Override critical settings to ensure things work during transition
+DEBUG = True
+ALLOWED_HOSTS = ['*'] 

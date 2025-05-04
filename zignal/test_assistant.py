@@ -1,134 +1,58 @@
-"""
-Test script to verify OpenAI integration with assistants
-"""
-import os
-import django
-import logging
-import datetime
+#!/usr/bin/env python
+# Test script to verify OpenAI integration for the assistant feature
 
-# Configure Django settings
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.config.settings')
+import os
+import sys
+import json
+import openai
+
+# Set up Django environment
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.zignal.config.settings')
+import django
 django.setup()
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from django.conf import settings
 
-# Import Django models
-from django.contrib.auth import get_user_model
-from companies.models import Company, UserCompanyRelation
-from companies.services.openai_service import CompanyOpenAIService
+# Verify API key is set
+api_key = settings.OPENAI_API_KEY
+if not api_key:
+    print("Error: OPENAI_API_KEY is not set in settings")
+    sys.exit(1)
 
-User = get_user_model()
+# Set up OpenAI client
+client = openai.OpenAI(api_key=api_key)
 
-def test_create_assistant():
-    """Test the creation of an OpenAI assistant for a company"""
-    try:
-        # Get the first user
-        user = User.objects.first()
-        if not user:
-            logger.error("No users found in the database")
-            return False
-        
-        # Create a test company
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        company_name = f"Test Company {timestamp}"
-        
-        company = Company.objects.create(
-            name=company_name,
-            description="A test company for OpenAI integration",
-            created_by=user
-        )
-        logger.info(f"Created company: {company.name} (ID: {company.id})")
-        
-        # Create relation between user and company
-        UserCompanyRelation.objects.create(
-            user=user,
-            company=company,
-            role='owner'
-        )
-        
-        # Create assistant
-        service = CompanyOpenAIService()
-        result = service.setup_company_ai(company)
-        
-        if result['success']:
-            logger.info(f"Successfully created assistant: {result['assistant_id']}")
-            
-            # Update company with OpenAI resource IDs
-            company.openai_assistant_id = result['assistant_id']
-            company.openai_vector_store_id = result['vector_store_id']
-            company.save()
-            
-            logger.info(f"Company {company.name} updated with OpenAI IDs")
-            logger.info(f"  - Assistant ID: {company.openai_assistant_id}")
-            logger.info(f"  - Vector Store ID: {company.openai_vector_store_id}")
-            
-            return True
-        else:
-            logger.error(f"Failed to create assistant: {result.get('error', 'Unknown error')}")
-            return False
-            
-    except Exception as e:
-        logger.error(f"Error in test_create_assistant: {str(e)}")
-        return False
-
-def test_add_file():
-    """Test adding a file to a company's assistant"""
-    try:
-        # Get the most recently created company
-        company = Company.objects.exclude(openai_assistant_id__isnull=True).exclude(openai_assistant_id="").order_by('-created_at').first()
-        
-        if not company:
-            logger.error("No company with OpenAI assistant found")
-            return False
-        
-        logger.info(f"Using company: {company.name} (ID: {company.id})")
-        logger.info(f"  - Assistant ID: {company.openai_assistant_id}")
-        logger.info(f"  - Vector Store ID: {company.openai_vector_store_id}")
-        
-        # Create a test file
-        test_file_path = "/tmp/test_document.md"
-        with open(test_file_path, "w") as f:
-            f.write(f"""# Test Document for {company.name}
-
-This is a test document created at {datetime.datetime.now().isoformat()}.
-
-It contains some information about the company:
-- Company name: {company.name}
-- Company ID: {company.id}
-- Description: {company.description}
-
-This document should be searchable by the OpenAI assistant.
-""")
-        
-        # Add the file to the assistant
-        service = CompanyOpenAIService()
-        result = service.add_file_to_vector_store(company, test_file_path)
-        
-        # Clean up
-        os.remove(test_file_path)
-        
-        if result['success']:
-            logger.info(f"Successfully added file to assistant")
-            logger.info(f"  - File ID: {result['file_id']}")
-            logger.info(f"  - File Attachment ID: {result['file_attachment_id']}")
-            return True
-        else:
-            logger.error(f"Failed to add file: {result.get('error', 'Unknown error')}")
-            return False
-            
-    except Exception as e:
-        logger.error(f"Error in test_add_file: {str(e)}")
-        return False
-
-if __name__ == "__main__":
-    # Test creating a company with an assistant
-    logger.info("==== Testing Assistant Creation ====")
-    success = test_create_assistant()
-    logger.info(f"Test result: {'SUCCESS' if success else 'FAILED'}")
+# Test connection by listing models
+try:
+    models = client.models.list()
+    print("✅ OpenAI connection successful")
+    print(f"Available models: {len(models.data)}")
     
-    # Test adding a file to the assistant
-    logger.info("\n==== Testing File Addition ====")
-    success = test_add_file()
-    logger.info(f"Test result: {'SUCCESS' if success else 'FAILED'}") 
+    for model in models.data[:5]:  # Print first 5 models
+        print(f"- {model.id}")
+    
+    if len(models.data) > 5:
+        print(f"... and {len(models.data) - 5} more")
+        
+except Exception as e:
+    print(f"❌ Error connecting to OpenAI: {str(e)}")
+    sys.exit(1)
+
+# Create a test assistant
+try:
+    assistant = client.beta.assistants.create(
+        name="Test Assistant",
+        instructions="You are a test assistant to verify that the OpenAI API is working properly.",
+        model=settings.OPENAI_MODEL,
+    )
+    print(f"\n✅ Successfully created test assistant with ID: {assistant.id}")
+    
+    # Clean up by deleting the test assistant
+    client.beta.assistants.delete(assistant.id)
+    print(f"✅ Successfully deleted test assistant")
+    
+except Exception as e:
+    print(f"❌ Error creating/deleting assistant: {str(e)}")
+    sys.exit(1)
+
+print("\n✅ All tests passed!") 

@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 """
-Script to check if Django is correctly loading environment variables
+Script to check environment variables that should be set for proper application functioning
 """
 import os
 import sys
 import django
+from django.core.exceptions import ImproperlyConfigured
 
-# Add the project directory to the path so Django can find the settings
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.config.settings')
+# Set Django settings module
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.zignal.config.settings')
 django.setup()
 
 from django.conf import settings

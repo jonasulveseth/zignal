@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 """
-Test script for OpenAI client with Django settings
+Test script to verify OpenAI API integration with Django settings
 """
 import os
 import sys
+import json
+import openai
 import django
 
 # Set up Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.zignal.config.settings')
 django.setup()
 
 from django.conf import settings
@@ -25,7 +27,6 @@ def main():
     logger.info(f"API key first 5 chars: {settings.OPENAI_API_KEY[:5] if settings.OPENAI_API_KEY else 'N/A'}")
     
     # Get OpenAI module version
-    import openai
     logger.info(f"OpenAI module version: {openai.__version__}")
     
     # Initialize the client

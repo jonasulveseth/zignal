@@ -1,1 +1,0 @@
-default_app_config = 'mail_receiver.apps.MailReceiverConfig' 

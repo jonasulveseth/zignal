@@ -3,15 +3,18 @@
 Script to check if vector stores are supported in the OpenAI SDK
 """
 import os
+import sys
+import json
 import django
 
-# Set up Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.config.settings')
+# Set Django settings module
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.zignal.config.settings')
 django.setup()
 
 from django.conf import settings
 from openai import OpenAI
 import logging
+from companies.models import Company
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

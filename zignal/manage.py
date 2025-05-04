@@ -6,6 +6,10 @@ import sys
 
 def main():
     """Run administrative tasks."""
+    # Add the parent directory to Python path for proper imports
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
+    # Set up Django settings module
     settings_module = 'zignal.config.settings'
     print(f"Setting DJANGO_SETTINGS_MODULE to: {settings_module}")
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings_module)

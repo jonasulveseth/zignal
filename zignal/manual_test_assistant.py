@@ -7,7 +7,7 @@ import datetime
 import django
 
 # Configure Django settings
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.zignal.config.settings')
 django.setup()
 
 # Set up logging

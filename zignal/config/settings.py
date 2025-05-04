@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -28,20 +28,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-mcc@@y*qg7%42w)mw44s=((ukn@e7$!!*5af1+f7xvtlz(t7i%')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Default to False in production, enable for development with environment variable
-debug_env = os.environ.get('DEBUG', '')
-DEBUG = debug_env.lower() in ('true', 'yes', 'y', '1', 't')
+# Default to True for local development, False in production
+DEBUG = True
+
+# Override with environment variable if explicitly set to False
+debug_env = os.environ.get('DEBUG', '').lower()
+if debug_env in ('false', 'no', 'n', '0', 'f'):
+    DEBUG = False
 
 # Print debug mode for diagnostic purposes
 print(f"DEBUG mode: {'ENABLED' if DEBUG else 'DISABLED'}")
 
-# Set allowed hosts based on environment
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'mighty-wave-39560-d078d75c03f3.herokuapp.com', 'zignal.se', 'www.zignal.se']
-
-# Additional hosts from environment variable
-additional_hosts = os.environ.get('ALLOWED_HOSTS', '')
-if additional_hosts:
-    ALLOWED_HOSTS.extend(additional_hosts.split(','))
+# Set allowed hosts based on environment and DEBUG setting
+if DEBUG:
+    ALLOWED_HOSTS = ['*']  # Allow all hosts in debug mode
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'mighty-wave-39560-d078d75c03f3.herokuapp.com', 'zignal.se', 'www.zignal.se']
+    
+    # Additional hosts from environment variable
+    additional_hosts = os.environ.get('ALLOWED_HOSTS', '')
+    if additional_hosts:
+        ALLOWED_HOSTS.extend(additional_hosts.split(','))
 
 # Print allowed hosts for diagnostic purposes
 print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
@@ -197,7 +204,7 @@ AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
 AWS_DEFAULT_ACL = os.environ.get('AWS_DEFAULT_ACL', 'private')  # Files are private by default
 AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', None)
-AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'eu-west-1')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'eu-west-1')
 AWS_LOCATION = os.environ.get('AWS_LOCATION', 'media')
 AWS_IS_GZIPPED = True
 AWS_S3_FILE_OVERWRITE = False  # Don't overwrite files with the same name

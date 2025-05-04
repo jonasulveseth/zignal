@@ -7,13 +7,16 @@ import os
 import sys
 import logging
 import django
+import celery
+import redis
+import time
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('celery_cleaner')
 
 # Set up Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.zignal.config.settings')
 try:
     django.setup()
 except Exception as e:

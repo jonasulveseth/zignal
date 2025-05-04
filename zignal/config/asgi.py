@@ -8,10 +8,9 @@ https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
 """
 
 import os
-import django
+
+from django.core.asgi import get_asgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.config.settings')
-django.setup()
 
-# Import application from routing file after Django setup
-from zignal.routing import application
+application = get_asgi_application()
