@@ -291,7 +291,7 @@ def process_file_for_vector_store(self, file_id):
             logger.info(f"S3 detection via class name: {using_s3}, Storage type: {storage_type}")
         
         # Hardcode for production if we're pretty sure S3 is being used
-        if not DEBUG and os.environ.get('USE_S3') == 'TRUE':
+        if not settings.DEBUG and os.environ.get('USE_S3') == 'TRUE':
             logger.info("Forcing S3 detection based on environment variables")
             using_s3 = True
         
