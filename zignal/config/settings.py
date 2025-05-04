@@ -174,7 +174,6 @@ if not DEBUG or USE_S3:
     
     # Force S3 to be used in all contexts
     from storages.backends.s3boto3 import S3Boto3Storage
-    from django.conf import LazySettings
     
     # Create customized S3 storage with our configured settings
     class MediaStorage(S3Boto3Storage):
@@ -182,12 +181,11 @@ if not DEBUG or USE_S3:
         file_overwrite = AWS_S3_FILE_OVERWRITE
         default_acl = AWS_DEFAULT_ACL
     
-    # Override Django's default_storage
-    # This is needed to fix issues where Django might revert to FileSystemStorage
-    from django.core.files.storage import default_storage, DefaultStorage
-    from django.utils.functional import empty
-    if not isinstance(default_storage._wrapped, empty):
-        default_storage._wrapped = MediaStorage()
+    # Make sure this is available to apps at import time
+    MEDIA_STORAGE_CLASS = MediaStorage
+    
+    # Note: We can't directly override default_storage here because it's a LazyObject
+    # Django will properly initialize it when first used
 else:
     print("Using local file storage for development.")
 

@@ -300,6 +300,11 @@ def process_file_for_vector_store(self, file_id):
             logger.info("Forcing S3 detection based on environment variables")
             using_s3 = True
         
+        # If not using S3, check if we should be (try to get direct S3 storage)
+        if not using_s3 and hasattr(settings, 'MEDIA_STORAGE_CLASS'):
+            logger.info("Detected MEDIA_STORAGE_CLASS in settings, will use for direct S3 operations")
+            using_s3 = True
+        
         # Get file path - need different approaches for local vs S3 storage
         temp_file = None
         file_path = None
@@ -330,12 +335,26 @@ def process_file_for_vector_store(self, file_id):
                         
                         logger.info(f"Using S3 credentials from env vars, bucket: {aws_bucket}, region: {aws_region}")
                         
-                        s3 = boto3.client(
-                            's3',
-                            aws_access_key_id=aws_access_key,
-                            aws_secret_access_key=aws_secret_key,
-                            region_name=aws_region
-                        )
+                        # Try using Django's media storage directly if available
+                        if hasattr(settings, 'MEDIA_STORAGE_CLASS'):
+                            from storages.backends.s3boto3 import S3Boto3Storage
+                            # Create MediaStorage instance
+                            s3_storage = settings.MEDIA_STORAGE_CLASS()
+                            
+                            # Get the client from the storage instance
+                            if hasattr(s3_storage, '_connections') and hasattr(s3_storage._connections, 'client'):
+                                s3 = s3_storage._connections.client
+                                logger.info("Using S3 client from Django MEDIA_STORAGE_CLASS")
+                        
+                        # Fallback: Create our own S3 client
+                        if s3 is None:
+                            s3 = boto3.client(
+                                's3',
+                                aws_access_key_id=aws_access_key,
+                                aws_secret_access_key=aws_secret_key,
+                                region_name=aws_region
+                            )
+                            logger.info("Created new S3 client from credentials")
                     except Exception as e:
                         logger.error(f"Error creating S3 client: {str(e)}")
                 
