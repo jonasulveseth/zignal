@@ -350,6 +350,10 @@ def process_file_for_vector_store(self, file_id):
                         # Also try without location prefix
                         paths_to_try.append(data_file.file.name.replace(f"{aws_location}/", ""))
                 
+                # Add more path combinations by removing media/ prefix if it exists
+                if data_file.file.name.startswith('media/'):
+                    paths_to_try.append(data_file.file.name[6:])  # Skip "media/"
+                
                 # Create temp file with the same extension
                 file_ext = os.path.splitext(data_file.file.name)[1]
                 temp_file = tempfile.NamedTemporaryFile(suffix=file_ext, delete=False)

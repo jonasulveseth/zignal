@@ -152,7 +152,7 @@ if not DEBUG or USE_S3:
     AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
     AWS_DEFAULT_ACL = os.environ.get('AWS_DEFAULT_ACL', 'private')  # Files are private by default
     AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', None)
-    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'eu-north-1')
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'eu-west-1')
     AWS_LOCATION = os.environ.get('AWS_LOCATION', 'media')
     AWS_IS_GZIPPED = True
     AWS_S3_FILE_OVERWRITE = False  # Don't overwrite files with the same name
@@ -170,7 +170,24 @@ if not DEBUG or USE_S3:
         print(f"S3 Storage: bucket={AWS_STORAGE_BUCKET_NAME}, region={AWS_S3_REGION_NAME}, location={AWS_LOCATION}")
         
     # Media config with S3
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/" if AWS_S3_CUSTOM_DOMAIN else f"/{AWS_LOCATION}/"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/" if AWS_S3_CUSTOM_DOMAIN else f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/{AWS_LOCATION}/"
+    
+    # Force S3 to be used in all contexts
+    from storages.backends.s3boto3 import S3Boto3Storage
+    from django.conf import LazySettings
+    
+    # Create customized S3 storage with our configured settings
+    class MediaStorage(S3Boto3Storage):
+        location = AWS_LOCATION
+        file_overwrite = AWS_S3_FILE_OVERWRITE
+        default_acl = AWS_DEFAULT_ACL
+    
+    # Override Django's default_storage
+    # This is needed to fix issues where Django might revert to FileSystemStorage
+    from django.core.files.storage import default_storage, DefaultStorage
+    from django.utils.functional import empty
+    if not isinstance(default_storage._wrapped, empty):
+        default_storage._wrapped = MediaStorage()
 else:
     print("Using local file storage for development.")
 
