@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('heroku_debug')
 
 # Set up Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.zignal.config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.config.settings')
 try:
     django.setup()
 except Exception as e:

@@ -8,7 +8,7 @@ import django
 from django.core.exceptions import ImproperlyConfigured
 
 # Set Django settings module
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.zignal.config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.config.settings')
 django.setup()
 
 from django.conf import settings

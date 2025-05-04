@@ -9,7 +9,7 @@ import openai
 import django
 
 # Set up Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.zignal.config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.config.settings')
 django.setup()
 
 from django.conf import settings
