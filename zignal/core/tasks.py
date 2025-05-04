@@ -275,53 +275,25 @@ def process_file_for_vector_store(self, file_id):
             }
         
         # Log storage information
-        storage_type = default_storage.__class__.__name__
-        using_s3 = 'S3' in storage_type or 'Boto' in storage_type
-        logger.info(f"Storage type: {storage_type}, Using S3: {using_s3}")
+        from django.conf import settings
         
-        # If using S3, verify bucket and credentials
-        if using_s3:
-            try:
-                import boto3
-                from botocore.exceptions import ClientError
-                
-                s3 = boto3.client(
-                    's3',
-                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                    region_name=settings.AWS_S3_REGION_NAME
-                )
-                
-                # Check if bucket exists
-                try:
-                    s3.head_bucket(Bucket=settings.AWS_STORAGE_BUCKET_NAME)
-                    logger.info(f"S3 bucket '{settings.AWS_STORAGE_BUCKET_NAME}' exists")
-                    
-                    # Try to verify file existence directly in S3
-                    s3_path = data_file.file.name
-                    if settings.AWS_LOCATION and not s3_path.startswith(settings.AWS_LOCATION):
-                        s3_path = f"{settings.AWS_LOCATION}/{s3_path}"
-                    
-                    try:
-                        s3.head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=s3_path)
-                        logger.info(f"S3 object exists at '{s3_path}'")
-                    except ClientError as e:
-                        if e.response['Error']['Code'] == '404':
-                            # If not found with AWS_LOCATION prefix, try without it
-                            if settings.AWS_LOCATION and s3_path.startswith(settings.AWS_LOCATION):
-                                try:
-                                    s3_path = data_file.file.name
-                                    s3.head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=s3_path)
-                                    logger.info(f"S3 object exists at '{s3_path}' (without location prefix)")
-                                except ClientError as e2:
-                                    logger.error(f"S3 object not found at '{s3_path}': {e2.response['Error']['Message']}")
-                            else:
-                                logger.error(f"S3 object not found at '{s3_path}': {e.response['Error']['Message']}")
-                    
-                except ClientError as e:
-                    logger.error(f"S3 bucket error: {e.response['Error']['Message']}")
-            except Exception as e:
-                logger.error(f"Error verifying S3 settings: {str(e)}")
+        # Better S3 detection method
+        using_s3 = False
+        try:
+            # Use URL method which is more reliable
+            test_url = default_storage.url('test-path')
+            using_s3 = 's3.amazonaws.com' in test_url or settings.AWS_STORAGE_BUCKET_NAME in test_url
+            logger.info(f"S3 detection via URL: {using_s3}")
+        except Exception as e:
+            # Fallback to traditional method
+            storage_type = default_storage.__class__.__name__
+            using_s3 = 'S3' in storage_type or 'Boto' in storage_type
+            logger.info(f"S3 detection via class name: {using_s3}, Storage type: {storage_type}")
+        
+        # Hardcode for production if we're pretty sure S3 is being used
+        if not DEBUG and os.environ.get('USE_S3') == 'TRUE':
+            logger.info("Forcing S3 detection based on environment variables")
+            using_s3 = True
         
         # Get file path - need different approaches for local vs S3 storage
         temp_file = None
