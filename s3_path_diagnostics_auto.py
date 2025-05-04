@@ -103,21 +103,33 @@ def examine_settings():
     if hasattr(default_storage, 'location'):
         logger.info(f"Storage location: {default_storage.location}")
     
-    # Check if Django is prepending location
-    test_path = "test_examine_path.txt"
-    if hasattr(default_storage, 'get_modified_name'):
-        try:
-            modified_name = default_storage.get_modified_name(test_path)
-            logger.info(f"Modified name method found. Test path '{test_path}' becomes '{modified_name}'")
-        except Exception as e:
-            logger.error(f"Error calling get_modified_name: {str(e)}")
+    # Check for custom storage class
+    if hasattr(settings, 'MEDIA_STORAGE_CLASS'):
+        logger.info(f"MEDIA_STORAGE_CLASS: {settings.MEDIA_STORAGE_CLASS.__name__}")
     
-    if hasattr(default_storage, '_normalize_name'):
-        try:
-            normalized_name = default_storage._normalize_name(test_path)
-            logger.info(f"Normalized name method found. Test path '{test_path}' becomes '{normalized_name}'")
-        except Exception as e:
-            logger.error(f"Error calling _normalize_name: {str(e)}")
+    # Check if storage is S3Boto3Storage
+    logger.info(f"Is S3Boto3Storage: {isinstance(default_storage, S3Boto3Storage)}")
+    
+    # Test if we can write and read directly
+    test_content = f"Test content {uuid.uuid4()}"
+    test_path = f"test_storage_{uuid.uuid4().hex[:8]}.txt"
+    
+    try:
+        # Try to save and get URL
+        path = default_storage.save(test_path, ContentFile(test_content.encode()))
+        url = default_storage.url(path)
+        logger.info(f"Test save path: {path}")
+        logger.info(f"Test URL: {url}")
+        
+        # Check if the file exists
+        exists = default_storage.exists(path)
+        logger.info(f"File exists: {exists}")
+        
+        # Clean up
+        default_storage.delete(path)
+        logger.info(f"Test file deleted")
+    except Exception as e:
+        logger.error(f"Error testing storage: {str(e)}")
 
 def test_upload_methods():
     """Test different upload methods to see where files are stored"""
