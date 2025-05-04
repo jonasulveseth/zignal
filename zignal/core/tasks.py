@@ -331,6 +331,17 @@ def process_file_for_vector_store(self, file_id):
                 logger.error(f"Error setting up direct S3 access: {str(e)}")
                 direct_s3_access = False
         
+        # Create metadata for the file
+        metadata = {
+            "file_id": str(data_file.id),
+            "file_name": data_file.name,
+            "file_type": data_file.file_type,
+            "data_silo": data_file.data_silo.name if data_file.data_silo else None,
+            "company": company.name if company else None,
+            "uploaded_at": str(data_file.created_at),
+            "source": "s3" if using_s3 else "local"
+        }
+        
         # We can skip downloading if using direct S3 access
         if not direct_s3_access:
             # Get file path - need different approaches for local vs S3 storage
@@ -391,7 +402,7 @@ def process_file_for_vector_store(self, file_id):
         return {
             "success": False,
             "error": str(e)
-        } 
+        }
 
 def process_file_for_vector_store_core(file_path=None, data_file=None, metadata=None, s3_bucket=None, s3_key=None):
     """Core function to process a file for the vector store.
