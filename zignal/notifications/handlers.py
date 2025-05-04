@@ -1,7 +1,5 @@
 import json
 import logging
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
 from django.conf import settings
@@ -13,111 +11,36 @@ from users.models import User
 from companies.models import Company
 
 logger = logging.getLogger(__name__)
-channel_layer = get_channel_layer()
 
 
 @receiver(notification_created)
 def handle_notification_created(sender, notification, **kwargs):
     """
-    Handle notification created signal by sending WebSocket message
+    Handle notification created signal
     
     Args:
         sender: The sending class
         notification: The Notification instance that was created
     """
     try:
-        # Prepare the message
-        message = {
-            'type': 'notification',
-            'action': 'created',
-            'id': str(notification.id),
-            'title': notification.title,
-            'message': notification.message,
-            'level': notification.level,
-            'created_at': notification.created_at.isoformat(),
-            'action_url': notification.action_url,
-            'action_text': notification.action_text,
-        }
-        
-        # Send to the user's notification group
-        async_to_sync(channel_layer.group_send)(
-            f'notifications_{notification.recipient.id}',
-            {
-                'type': 'notification_message',
-                'message': message
-            }
-        )
-        
-        # Update the unread count
-        unread_count = Notification.objects.filter(
-            recipient=notification.recipient, 
-            unread=True
-        ).count()
-        
-        async_to_sync(channel_layer.group_send)(
-            f'notifications_{notification.recipient.id}',
-            {
-                'type': 'notification_message',
-                'message': {
-                    'type': 'unread_count',
-                    'count': unread_count
-                }
-            }
-        )
-        
-        logger.info(f"Sent WebSocket notification to user {notification.recipient.id}")
-        
+        logger.info(f"New notification created for user {notification.recipient.id}: {notification.title}")
     except Exception as e:
-        logger.error(f"Error sending WebSocket notification: {str(e)}")
+        logger.error(f"Error handling notification created: {str(e)}")
 
 
 @receiver(notification_read)
 def handle_notification_read(sender, notification, **kwargs):
     """
-    Handle notification read signal by sending WebSocket message
+    Handle notification read signal
     
     Args:
         sender: The sending class
         notification: The Notification instance that was marked as read
     """
     try:
-        # Prepare the message
-        message = {
-            'type': 'notification',
-            'action': 'read',
-            'id': str(notification.id),
-        }
-        
-        # Send to the user's notification group
-        async_to_sync(channel_layer.group_send)(
-            f'notifications_{notification.recipient.id}',
-            {
-                'type': 'notification_message',
-                'message': message
-            }
-        )
-        
-        # Update the unread count
-        unread_count = Notification.objects.filter(
-            recipient=notification.recipient, 
-            unread=True
-        ).count()
-        
-        async_to_sync(channel_layer.group_send)(
-            f'notifications_{notification.recipient.id}',
-            {
-                'type': 'notification_message',
-                'message': {
-                    'type': 'unread_count',
-                    'count': unread_count
-                }
-            }
-        )
-        
-        logger.info(f"Sent WebSocket notification read update to user {notification.recipient.id}")
-        
+        logger.info(f"Notification marked as read for user {notification.recipient.id}: {notification.id}")
     except Exception as e:
-        logger.error(f"Error sending WebSocket notification read update: {str(e)}")
+        logger.error(f"Error handling notification read: {str(e)}")
 
 
 # Integration with mail_receiver signals
@@ -252,12 +175,44 @@ def handle_user_created(sender, instance, created, **kwargs):
                     NotificationService.create_notification(
                         recipient=admin,
                         title="New User Registered",
-                        message=f"{instance.get_full_name() or instance.email} has registered",
+                        message=f"User {instance.email} has registered.",
                         level="info",
                         related_object=instance,
                         action_url=f"/admin/users/user/{instance.id}/change/",
                         action_text="View User"
                     )
+                
+                logger.info(f"Created notifications for new user {instance.id}")
         
         except Exception as e:
-            logger.error(f"Error creating notification for new user: {str(e)}") 
+            logger.error(f"Error creating notification for new user: {str(e)}")
+
+
+@receiver(post_save, sender=Company)
+def handle_company_created(sender, instance, created, **kwargs):
+    """Create notification when a new company is created"""
+    from .services import NotificationService
+    
+    if created:
+        try:
+            # Notify portfolio managers about new company
+            portfolio_managers = User.objects.filter(
+                user_type='portfolio_manager'
+            )
+            
+            if portfolio_managers.exists():
+                for manager in portfolio_managers:
+                    NotificationService.create_notification(
+                        recipient=manager,
+                        title="New Company Added",
+                        message=f"Company {instance.name} has been added.",
+                        level="info",
+                        related_object=instance,
+                        action_url=f"/companies/{instance.id}/",
+                        action_text="View Company"
+                    )
+                
+                logger.info(f"Created notifications for new company {instance.id}")
+        
+        except Exception as e:
+            logger.error(f"Error creating notification for new company: {str(e)}") 

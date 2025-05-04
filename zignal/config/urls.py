@@ -45,9 +45,6 @@ urlpatterns = [
     path('test-base/', views.test_base_view, name='test_base_view'),
     path('debug/toggle-user-type/', views.toggle_user_type, name='toggle_user_type'),
     
-    # Legacy WebSocket endpoint - handle old connections with appropriate response
-    path('ws/notifications/', views.redirect_websocket, name='redirect_websocket'),
-    
     # django-allauth URLs - main authentication system
     path('accounts/', include('allauth.urls')),
     

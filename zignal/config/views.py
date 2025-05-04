@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 import os
 import uuid
+from django.core.cache import cache
 
 # Import necessary models
 from companies.models import Company
@@ -261,44 +262,21 @@ def toggle_user_type(request):
     messages.success(request, f"{message}. Your user type is now: {user.user_type}")
     return redirect('dashboard') 
 
-@login_required
 def redirect_to_company_silo(request):
-    """Redirect to the company's data silo page"""
+    """Redirect to the company's data silo view"""
     user = request.user
     profile = Profile.objects.filter(user=user).first()
     
-    # Get the company
-    company = None
-    if profile and hasattr(profile, 'company'):
+    if profile and hasattr(profile, 'company') and profile.company:
         company = profile.company
+        return redirect('datasilo:company_silo', company_id=company.id)
     
-    if not company:
-        company_relation = user.company_relations.first()
-        if company_relation:
-            company = company_relation.company
+    # If no company found through profile, try to get it through UserCompanyRelation
+    company_relation = user.company_relations.first()
+    if company_relation:
+        company = company_relation.company
+        return redirect('datasilo:company_silo', company_id=company.id)
     
-    if company:
-        # Redirect to company silo
-        return redirect('datasilo:company_silos', company_id=company.id)
-    else:
-        # No company found, redirect to dashboard
-        messages.warning(request, "You need to set up a company first.")
-        return redirect('dashboard')
-
-def redirect_websocket(request):
-    """
-    Handle legacy WebSocket connections.
-    This is a transitional endpoint that responds to old WebSocket connection attempts
-    from clients that haven't been updated yet.
-    
-    Returns:
-        JsonResponse: Information about the new notification system
-    """
-    import logging
-    logger = logging.getLogger('django')
-    logger.info("Legacy WebSocket connection attempt handled at root level")
-    
-    return JsonResponse({
-        'status': 'updated_system',
-        'message': 'WebSocket notifications have been replaced with HTTP polling. Please reload the page to use the new system.'
-    }, status=200)  # Return 200 instead of 404 to reduce error noise in logs 
+    # If no company found, redirect to dashboard with message
+    messages.warning(request, "You need to be associated with a company to access data silos.")
+    return redirect('dashboard') 

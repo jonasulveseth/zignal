@@ -105,8 +105,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Add allauth middleware
     'allauth.account.middleware.AccountMiddleware',
-    # Custom middleware for WebSocket paths
-    'zignal.config.middleware.WebSocketLoggingMiddleware',
 ]
 
 ROOT_URLCONF = 'zignal.config.urls'
@@ -296,28 +294,17 @@ LOGGING = {
             'style': '{',
         },
     },
-    'filters': {
-        'exclude_websocket_paths': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': lambda record: not (hasattr(record, 'request') and 
-                                           record.request and 
-                                           hasattr(record.request, 'path') and 
-                                           record.request.path.startswith('/ws/'))
-        }
-    },
     'handlers': {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
-            'filters': ['exclude_websocket_paths'],
         },
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR / 'debug.log',
             'formatter': 'verbose',
-            'filters': ['exclude_websocket_paths'],
         },
     },
     'loggers': {
