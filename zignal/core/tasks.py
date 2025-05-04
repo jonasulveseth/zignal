@@ -349,7 +349,52 @@ def process_file_for_vector_store(self, file_id):
             file_ext = os.path.splitext(data_file.file.name)[1]
             try:
                 temp_file = tempfile.NamedTemporaryFile(suffix=file_ext, delete=False)
-                # ... [existing file download code] ...
+                
+                # Download the file content
+                if using_s3:
+                    # Use boto3 to download from S3
+                    import boto3
+                    s3_client = boto3.client(
+                        's3',
+                        aws_access_key_id=aws_access_key,
+                        aws_secret_access_key=aws_secret_key,
+                        region_name=aws_region
+                    )
+                    
+                    # Determine the correct S3 key path
+                    file_key = data_file.file.name
+                    if aws_location and not file_key.startswith(f"{aws_location}/"):
+                        file_key = f"{aws_location}/{file_key}"
+                    
+                    logger.info(f"Downloading file from S3: bucket={aws_bucket}, key={file_key}")
+                    try:
+                        s3_client.download_file(aws_bucket, file_key, temp_file.name)
+                    except Exception as e:
+                        # Try alternative path if first attempt failed
+                        try:
+                            alt_key = data_file.file.name
+                            logger.info(f"First attempt failed, trying alternative path: {alt_key}")
+                            s3_client.download_file(aws_bucket, alt_key, temp_file.name)
+                        except Exception as e2:
+                            logger.error(f"Both download attempts failed: {str(e2)}")
+                            raise e
+                else:
+                    # For local storage, just open and read the file
+                    with default_storage.open(data_file.file.name, 'rb') as f:
+                        temp_file.write(f.read())
+                
+                temp_file.close()
+                
+                # Verify file was downloaded and has content
+                if os.path.getsize(temp_file.name) == 0:
+                    logger.error(f"Downloaded file is empty: {temp_file.name}")
+                    DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+                    return {
+                        "success": False,
+                        "error": "Downloaded file is empty"
+                    }
+                
+                logger.info(f"File downloaded successfully to {temp_file.name} ({os.path.getsize(temp_file.name)} bytes)")
                 
                 # Process file for vector store
                 result = process_file_for_vector_store_core(file_path=temp_file.name, data_file=data_file, metadata=metadata)
