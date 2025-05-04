@@ -274,15 +274,20 @@ def process_file_for_vector_store(self, file_id):
                 "error": f"OpenAI service not available: {str(e)}"
             }
         
-        # Log storage information
-        from django.conf import settings
-        
         # Better S3 detection method
         using_s3 = False
+        
+        # Get AWS credentials first (we'll need these throughout the function)
+        aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
+        aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+        aws_region = os.environ.get('AWS_S3_REGION_NAME', 'eu-west-1')
+        aws_bucket = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'zignalse')
+        aws_location = os.environ.get('AWS_LOCATION', 'media')
+        
         try:
             # Use URL method which is more reliable
             test_url = default_storage.url('test-path')
-            using_s3 = 's3.amazonaws.com' in test_url or settings.AWS_STORAGE_BUCKET_NAME in test_url
+            using_s3 = 's3.amazonaws.com' in test_url or aws_bucket in test_url
             logger.info(f"S3 detection via URL: {using_s3}")
         except Exception as e:
             # Fallback to traditional method
@@ -316,11 +321,20 @@ def process_file_for_vector_store(self, file_id):
                 s3 = None
                 if using_s3:
                     try:
+                        # Get credentials directly from environment variables instead of settings
+                        aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
+                        aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+                        aws_region = os.environ.get('AWS_S3_REGION_NAME', 'eu-west-1')
+                        aws_bucket = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'zignalse')
+                        aws_location = os.environ.get('AWS_LOCATION', 'media')
+                        
+                        logger.info(f"Using S3 credentials from env vars, bucket: {aws_bucket}, region: {aws_region}")
+                        
                         s3 = boto3.client(
                             's3',
-                            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                            region_name=settings.AWS_S3_REGION_NAME
+                            aws_access_key_id=aws_access_key,
+                            aws_secret_access_key=aws_secret_key,
+                            region_name=aws_region
                         )
                     except Exception as e:
                         logger.error(f"Error creating S3 client: {str(e)}")
@@ -329,12 +343,12 @@ def process_file_for_vector_store(self, file_id):
                 paths_to_try = [data_file.file.name]
                 
                 # Add paths with and without location prefix
-                if using_s3 and settings.AWS_LOCATION:
-                    if not data_file.file.name.startswith(f"{settings.AWS_LOCATION}/"):
-                        paths_to_try.append(f"{settings.AWS_LOCATION}/{data_file.file.name}")
+                if using_s3 and aws_location:
+                    if not data_file.file.name.startswith(f"{aws_location}/"):
+                        paths_to_try.append(f"{aws_location}/{data_file.file.name}")
                     else:
                         # Also try without location prefix
-                        paths_to_try.append(data_file.file.name.replace(f"{settings.AWS_LOCATION}/", ""))
+                        paths_to_try.append(data_file.file.name.replace(f"{aws_location}/", ""))
                 
                 # Create temp file with the same extension
                 file_ext = os.path.splitext(data_file.file.name)[1]
@@ -380,9 +394,9 @@ def process_file_for_vector_store(self, file_id):
                     for path in paths_to_try:
                         if not file_downloaded:
                             try:
-                                logger.info(f"Attempting direct S3 download from bucket={settings.AWS_STORAGE_BUCKET_NAME}, key={path}")
+                                logger.info(f"Attempting direct S3 download from bucket={aws_bucket}, key={path}")
                                 s3.download_file(
-                                    Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                                    Bucket=aws_bucket,
                                     Key=path,
                                     Filename=temp_file.name
                                 )
@@ -412,7 +426,7 @@ def process_file_for_vector_store(self, file_id):
                             if using_s3:
                                 for path in paths_to_try:
                                     if not file_url:
-                                        s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{path}"
+                                        s3_url = f"https://{aws_bucket}.s3.{aws_region}.amazonaws.com/{path}"
                                         logger.info(f"Using constructed S3 URL: {s3_url}")
                                         file_url = s3_url
                         
