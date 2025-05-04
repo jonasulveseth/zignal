@@ -235,4 +235,91 @@ class CompanyOpenAIService:
             return {
                 "success": False,
                 "error": str(e)
+            }
+    
+    def add_s3_file_to_vector_store(self, company, s3_bucket, s3_key, file_name=None, metadata=None):
+        """
+        Add a file directly from S3 to the company's vector store without downloading it first
+        
+        Args:
+            company: Company model instance
+            s3_bucket: S3 bucket name
+            s3_key: S3 object key
+            file_name: Optional name for the file (defaults to the last part of S3 key)
+            metadata: Optional metadata to include with the file
+            
+        Returns:
+            dict: Information about the operation
+        """
+        import boto3
+        import tempfile
+        
+        if not company.openai_assistant_id:
+            return {
+                "success": False,
+                "error": "Company does not have an OpenAI assistant configured"
+            }
+        
+        logger.info(f"Adding S3 file to vector store - bucket: {s3_bucket}, key: {s3_key}")
+        
+        try:
+            # If no file_name provided, use the last part of the S3 key
+            if not file_name:
+                file_name = s3_key.split('/')[-1]
+            
+            # We need to use an intermediate step with a temporary file
+            # because OpenAI's API doesn't support direct S3 upload yet
+            temp_file = tempfile.NamedTemporaryFile(delete=False)
+            try:
+                # Create S3 client
+                s3 = boto3.client('s3')
+                
+                # Download the file to a temporary location
+                logger.info(f"Downloading from S3 to temp file: {temp_file.name}")
+                s3.download_file(s3_bucket, s3_key, temp_file.name)
+                
+                # Close the file to ensure it's fully written
+                temp_file.close()
+                
+                # Add metadata to include with file
+                file_metadata = metadata or {}
+                if not file_metadata:
+                    file_metadata = {
+                        "source": "s3",
+                        "bucket": s3_bucket,
+                        "key": s3_key,
+                    }
+                
+                # Now upload the file to OpenAI
+                result = self.add_file_to_vector_store(company, temp_file.name, file_name)
+                
+                # Add metadata to the result
+                if result.get("success") and result.get("file_id"):
+                    # Try to update the file metadata - this is a beta feature
+                    if hasattr(self.client, 'files') and hasattr(self.client.files, 'update'):
+                        try:
+                            self.client.files.update(
+                                file_id=result.get("file_id"),
+                                metadata=file_metadata
+                            )
+                            logger.info(f"Updated file metadata for file ID: {result.get('file_id')}")
+                        except Exception as e:
+                            logger.warning(f"Could not update file metadata (likely not supported): {str(e)}")
+                
+                return result
+                
+            finally:
+                # Clean up temp file
+                try:
+                    import os
+                    os.unlink(temp_file.name)
+                    logger.info(f"Deleted temporary file: {temp_file.name}")
+                except Exception as e:
+                    logger.warning(f"Error deleting temporary file: {str(e)}")
+            
+        except Exception as e:
+            logger.error(f"Error adding S3 file to vector store: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e)
             } 

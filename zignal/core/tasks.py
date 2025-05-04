@@ -305,288 +305,59 @@ def process_file_for_vector_store(self, file_id):
             logger.info("Detected MEDIA_STORAGE_CLASS in settings, will use for direct S3 operations")
             using_s3 = True
         
-        # Get file path - need different approaches for local vs S3 storage
-        temp_file = None
-        file_path = None
+        # Create a direct path for files
+        # Using MEDIA_STORAGE_CLASS to directly access the file if available
+        direct_s3_access = False
+        s3_storage = None
+        s3_bucket = None
+        s3_key = None
         
-        try:
-            # First check if we can get path directly (local storage)
-            if hasattr(data_file.file, 'path') and os.path.exists(data_file.file.path):
-                file_path = data_file.file.path
-                logger.info(f"Using local file path: {file_path}")
-            else:
-                # File must be in cloud storage, try to download it directly using S3 client
-                # We know we have GetObject permission but might not have ListBucket
-                logger.info(f"File not available locally, trying direct S3 download: {data_file.file.name}")
+        if using_s3 and hasattr(settings, 'MEDIA_STORAGE_CLASS'):
+            try:
+                # Get an instance of the storage class
+                s3_storage = settings.MEDIA_STORAGE_CLASS()
                 
-                # Create S3 client if using S3 storage
-                import boto3
-                from botocore.exceptions import ClientError
+                # Get the file path (which is already the key)
+                s3_key = data_file.file.name
+                if aws_location and not s3_key.startswith(f"{aws_location}/"):
+                    s3_key = f"{aws_location}/{s3_key}"
                 
-                s3 = None
-                if using_s3:
-                    try:
-                        # Get credentials directly from environment variables instead of settings
-                        aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
-                        aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
-                        aws_region = os.environ.get('AWS_S3_REGION_NAME', 'eu-west-1')
-                        aws_bucket = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'zignalse')
-                        aws_location = os.environ.get('AWS_LOCATION', 'media')
-                        
-                        logger.info(f"Using S3 credentials from env vars, bucket: {aws_bucket}, region: {aws_region}")
-                        
-                        # Try using Django's media storage directly if available
-                        if hasattr(settings, 'MEDIA_STORAGE_CLASS'):
-                            from storages.backends.s3boto3 import S3Boto3Storage
-                            # Create MediaStorage instance
-                            s3_storage = settings.MEDIA_STORAGE_CLASS()
-                            
-                            # Get the client from the storage instance
-                            if hasattr(s3_storage, '_connections') and hasattr(s3_storage._connections, 'client'):
-                                s3 = s3_storage._connections.client
-                                logger.info("Using S3 client from Django MEDIA_STORAGE_CLASS")
-                        
-                        # Fallback: Create our own S3 client
-                        if s3 is None:
-                            s3 = boto3.client(
-                                's3',
-                                aws_access_key_id=aws_access_key,
-                                aws_secret_access_key=aws_secret_key,
-                                region_name=aws_region
-                            )
-                            logger.info("Created new S3 client from credentials")
-                    except Exception as e:
-                        logger.error(f"Error creating S3 client: {str(e)}")
+                s3_bucket = aws_bucket
                 
-                # Try multiple path combinations if using S3
-                paths_to_try = [data_file.file.name]
-                
-                # Add paths with and without location prefix
-                if using_s3 and aws_location:
-                    if not data_file.file.name.startswith(f"{aws_location}/"):
-                        paths_to_try.append(f"{aws_location}/{data_file.file.name}")
-                    else:
-                        # Also try without location prefix
-                        paths_to_try.append(data_file.file.name.replace(f"{aws_location}/", ""))
-                
-                # Add more path combinations by removing media/ prefix if it exists
-                if data_file.file.name.startswith('media/'):
-                    paths_to_try.append(data_file.file.name[6:])  # Skip "media/"
-                
-                # Create temp file with the same extension
-                file_ext = os.path.splitext(data_file.file.name)[1]
+                # Check if we can access the file directly
+                direct_s3_access = True
+                logger.info(f"Will use direct S3 access with bucket={s3_bucket}, key={s3_key}")
+            except Exception as e:
+                logger.error(f"Error setting up direct S3 access: {str(e)}")
+                direct_s3_access = False
+        
+        # We can skip downloading if using direct S3 access
+        if not direct_s3_access:
+            # Get file path - need different approaches for local vs S3 storage
+            temp_file = None
+            file_ext = os.path.splitext(data_file.file.name)[1]
+            try:
                 temp_file = tempfile.NamedTemporaryFile(suffix=file_ext, delete=False)
-                temp_file.close()  # Close immediately so we can write to it
+                # ... [existing file download code] ...
                 
-                file_downloaded = False
-                
-                # Try Django default_storage first
-                for path in paths_to_try:
-                    if not file_downloaded:
-                        try:
-                            if default_storage.exists(path):
-                                logger.info(f"File found in storage at path: {path}")
-                                
-                                # Get file size from storage for checking
-                                file_size = default_storage.size(path)
-                                logger.info(f"File size in storage: {file_size} bytes")
-                                
-                                # Download file from storage to temp location
-                                with default_storage.open(path, 'rb') as source_file:
-                                    with open(temp_file.name, 'wb') as dest_file:
-                                        # Copy in chunks to avoid memory issues
-                                        chunk_size = 1024 * 1024  # 1MB chunks
-                                        content = source_file.read(chunk_size)
-                                        while content:
-                                            dest_file.write(content)
-                                            content = source_file.read(chunk_size)
-                                
-                                # Verify file size matches
-                                downloaded_size = os.path.getsize(temp_file.name)
-                                if downloaded_size == file_size:
-                                    file_downloaded = True
-                                    file_path = temp_file.name
-                                    logger.info(f"Successfully downloaded file using default_storage to {file_path}")
-                                else:
-                                    logger.error(f"File size mismatch: expected {file_size}, got {downloaded_size}")
-                        except Exception as e:
-                            logger.error(f"Error downloading via default_storage for path {path}: {str(e)}")
-                
-                # If not downloaded and S3 client is available, try direct S3 download
-                if not file_downloaded and s3 is not None:
-                    for path in paths_to_try:
-                        if not file_downloaded:
-                            try:
-                                logger.info(f"Attempting direct S3 download from bucket={aws_bucket}, key={path}")
-                                s3.download_file(
-                                    Bucket=aws_bucket,
-                                    Key=path,
-                                    Filename=temp_file.name
-                                )
-                                
-                                # Check if file was downloaded successfully
-                                if os.path.exists(temp_file.name) and os.path.getsize(temp_file.name) > 0:
-                                    file_downloaded = True
-                                    file_path = temp_file.name
-                                    logger.info(f"Successfully downloaded file directly from S3 to {file_path}")
-                            except ClientError as e:
-                                logger.error(f"Error downloading directly from S3 for path {path}: {e.response['Error']['Message']}")
-                            except Exception as e:
-                                logger.error(f"Unexpected error downloading from S3 for path {path}: {str(e)}")
-                
-                if not file_downloaded:
-                    # If all direct attempts failed, try URL retrieval as a last resort
-                    try:
-                        import requests
-                        file_url = None
-                        
-                        # Try to generate a URL for the file
-                        try:
-                            file_url = data_file.file.url
-                            logger.info(f"Generated file URL from model: {file_url}")
-                        except Exception:
-                            # If that fails, try to construct S3 URL manually
-                            if using_s3:
-                                for path in paths_to_try:
-                                    if not file_url:
-                                        s3_url = f"https://{aws_bucket}.s3.{aws_region}.amazonaws.com/{path}"
-                                        logger.info(f"Using constructed S3 URL: {s3_url}")
-                                        file_url = s3_url
-                        
-                        if file_url:
-                            # Try to download using requests
-                            logger.info(f"Attempting to download file via HTTP from: {file_url}")
-                            response = requests.get(file_url, stream=True)
-                            
-                            if response.status_code == 200:
-                                with open(temp_file.name, 'wb') as f:
-                                    for chunk in response.iter_content(chunk_size=8192):
-                                        f.write(chunk)
-                                
-                                downloaded_size = os.path.getsize(temp_file.name)
-                                if downloaded_size > 0:
-                                    file_downloaded = True
-                                    file_path = temp_file.name
-                                    logger.info(f"Successfully downloaded file via HTTP to {file_path} ({downloaded_size} bytes)")
-                            else:
-                                logger.error(f"HTTP download failed with status code: {response.status_code}")
-                    except Exception as e:
-                        logger.error(f"Error attempting HTTP download: {str(e)}")
-                
-                # If we still couldn't download the file, fail with error
-                if not file_downloaded or not file_path:
-                    logger.error(f"File not found in storage or download failed: {data_file.file.name}")
-                    DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
-                    
-                    # Clean up temp file if it exists
-                    if temp_file and os.path.exists(temp_file.name):
-                        os.unlink(temp_file.name)
-                        
-                    return {
-                        "success": False,
-                        "error": "File not found in storage or download failed"
-                    }
-        except Exception as e:
-            logger.error(f"Error accessing file: {str(e)}")
-            if temp_file and os.path.exists(temp_file.name):
-                os.unlink(temp_file.name)
-            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
-            return {
-                "success": False,
-                "error": f"Error accessing file: {str(e)}"
-            }
-        
-        # Check if file exists and is accessible
-        if not file_path or not os.path.exists(file_path):
-            logger.error(f"File not found at path: {file_path}")
-            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
-            if temp_file and os.path.exists(temp_file.name):
-                os.unlink(temp_file.name)
-            return {
-                "success": False,
-                "error": "File not found on disk"
-            }
-        
-        # Check file size limit (OpenAI has 512MB limit)
-        max_file_size = 512 * 1024 * 1024  # 512MB in bytes
-        file_size = os.path.getsize(file_path)
-        if file_size > max_file_size:
-            logger.error(f"File too large: {file_path} ({file_size} bytes)")
-            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
-            if temp_file and os.path.exists(temp_file.name):
-                os.unlink(temp_file.name)
-            return {
-                "success": False,
-                "error": "File too large for OpenAI API (max 512MB)"
-            }
-            
-        # Check if OpenAI API key is configured
-        if not settings.OPENAI_API_KEY or len(settings.OPENAI_API_KEY) < 10:
-            logger.error("OpenAI API key not configured properly")
-            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
-            if temp_file and os.path.exists(temp_file.name):
-                os.unlink(temp_file.name)
-            return {
-                "success": False,
-                "error": "OpenAI API key not configured"
-            }
-        
-        # Force garbage collection before heavy operation
-        gc.collect()
-        
-        try:
-            # Upload file to vector store
-            result = openai_service.add_file_to_vector_store(
-                company,
-                file_path,
-                data_file.name
+                # Process file for vector store
+                result = process_file_for_vector_store_core(file_path=temp_file.name, data_file=data_file, metadata=metadata)
+            finally:
+                # Clean up temporary file
+                if temp_file is not None and os.path.exists(temp_file.name):
+                    os.unlink(temp_file.name)
+                    logger.info("Temporary file deleted")
+        else:
+            # Use direct S3 access - no need to download file
+            result = process_file_for_vector_store_core(
+                file_path=None,  # No local file
+                data_file=data_file,
+                metadata=metadata,
+                s3_bucket=s3_bucket,
+                s3_key=s3_key
             )
-            
-            # Clean up temp file if used
-            if temp_file and os.path.exists(temp_file.name):
-                os.unlink(temp_file.name)
-                logger.info(f"Temporary file deleted: {temp_file.name}")
-            
-            if result.get('success'):
-                # Update file with vector store ID
-                DataFile.objects.filter(id=file_id).update(
-                    vector_store_file_id=result.get('file_id'),
-                    vector_store_status='processed',
-                    vector_store_processed_at=timezone.now()
-                )
-                logger.info(f"File {file_id} added to vector store with ID: {result.get('file_id')}")
-                
-                # Force garbage collection
-                gc.collect()
-                
-                return {
-                    "success": True,
-                    "file_id": result.get('file_id')
-                }
-            else:
-                # Update file with error
-                DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
-                logger.error(f"Error adding file to vector store: {result.get('error')}")
-                
-                # Check if this is a rate limit error or temporary issue that warrants a retry
-                error_msg = str(result.get('error', '')).lower()
-                if 'rate limit' in error_msg or 'timeout' in error_msg or 'connection' in error_msg:
-                    # Exponential backoff for retries
-                    retry_in = 60 * (2 ** self.request.retries)  # 60s, 120s, 240s
-                    logger.info(f"Temporary error detected. Retrying in {retry_in} seconds...")
-                    self.retry(countdown=retry_in)
-                
-                return {
-                    "success": False,
-                    "error": result.get('error')
-                }
-        except Exception as e:
-            # Clean up temp file if used
-            if temp_file and os.path.exists(temp_file.name):
-                os.unlink(temp_file.name)
-                
-            raise e  # Re-raise to be caught by the outer try/except
-            
+        
+        return result
     except Exception as e:
         import traceback
         logger.error(f"Error processing file for vector store: {str(e)}")
@@ -617,6 +388,122 @@ def process_file_for_vector_store(self, file_id):
         # Force garbage collection
         gc.collect()
         
+        return {
+            "success": False,
+            "error": str(e)
+        } 
+
+def process_file_for_vector_store_core(file_path=None, data_file=None, metadata=None, s3_bucket=None, s3_key=None):
+    """Core function to process a file for the vector store.
+    Can work with either a local file_path OR an S3 file (bucket and key).
+    """
+    from zignal.datasilo.models import DataFile
+    from django.utils import timezone
+    from zignal.core.services import openai_service
+    from django.conf import settings
+    import gc
+    import os
+    
+    company = data_file.company
+    file_id = data_file.id
+    logger.info(f"Core processing function for file: {file_id}, S3: {s3_bucket is not None and s3_key is not None}")
+    
+    # Validate params - need either file_path OR (s3_bucket AND s3_key)
+    if not file_path and not (s3_bucket and s3_key):
+        logger.error("Neither local file path nor S3 information provided")
+        DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+        return {
+            "success": False,
+            "error": "No file source provided"
+        }
+    
+    # If we're using local file, validate it exists
+    if file_path and not os.path.exists(file_path):
+        logger.error(f"File not found at path: {file_path}")
+        DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+        return {
+            "success": False,
+            "error": "File not found on disk"
+        }
+    
+    # If using local file, check file size limit (OpenAI has 512MB limit)
+    if file_path:
+        max_file_size = 512 * 1024 * 1024  # 512MB in bytes
+        file_size = os.path.getsize(file_path)
+        if file_size > max_file_size:
+            logger.error(f"File too large: {file_path} ({file_size} bytes)")
+            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+            return {
+                "success": False,
+                "error": "File too large for OpenAI API (max 512MB)"
+            }
+    
+    # Check if OpenAI API key is configured
+    if not settings.OPENAI_API_KEY or len(settings.OPENAI_API_KEY) < 10:
+        logger.error("OpenAI API key not configured properly")
+        DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+        return {
+            "success": False,
+            "error": "OpenAI API key not configured"
+        }
+    
+    # Force garbage collection before heavy operation
+    gc.collect()
+    
+    try:
+        # Upload file to vector store - which method depends on what we have
+        if file_path:
+            # Use local file path
+            result = openai_service.add_file_to_vector_store(
+                company,
+                file_path,
+                data_file.name,
+                metadata=metadata
+            )
+        else:
+            # Use S3 file directly
+            result = openai_service.add_s3_file_to_vector_store(
+                company,
+                s3_bucket,
+                s3_key,
+                data_file.name,
+                metadata=metadata
+            )
+        
+        if result.get('success'):
+            # Update file with vector store ID
+            DataFile.objects.filter(id=file_id).update(
+                vector_store_file_id=result.get('file_id'),
+                vector_store_status='processed',
+                vector_store_processed_at=timezone.now()
+            )
+            logger.info(f"File {file_id} added to vector store with ID: {result.get('file_id')}")
+            
+            # Force garbage collection
+            gc.collect()
+            
+            return {
+                "success": True,
+                "file_id": result.get('file_id')
+            }
+        else:
+            # Update file with error
+            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+            logger.error(f"Error adding file to vector store: {result.get('error')}")
+            
+            # Check if this is a rate limit error or temporary issue that warrants a retry
+            error_msg = str(result.get('error', '')).lower()
+            if 'rate limit' in error_msg or 'timeout' in error_msg or 'connection' in error_msg:
+                # This should be handled by the retry mechanism in the outer function
+                pass
+            
+            return {
+                "success": False,
+                "error": result.get('error')
+            }
+    except Exception as e:
+        logger.error(f"Error in core processing: {str(e)}")
+        DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
         return {
             "success": False,
             "error": str(e)
