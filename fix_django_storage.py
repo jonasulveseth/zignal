@@ -15,7 +15,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zignal.config.settings')
 django.setup()
 
 # Import Django modules
-from django.core.files.storage import default_storage, get_storage_class
+from django.core.files.storage import default_storage
 from django.conf import settings
 from django.core.files.base import ContentFile
 
