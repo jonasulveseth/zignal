@@ -1,36 +1,34 @@
 /**
  * Zignal Notifications System
- * Handles real-time notifications through WebSockets
+ * HTTP-based notifications with polling (no WebSockets)
  */
 
 class NotificationManager {
     constructor(options = {}) {
         this.options = {
-            wsUrl: options.wsUrl || this._getWebSocketUrl(),
+            pollingInterval: options.pollingInterval || 30000, // 30 seconds
             notificationContainerId: options.notificationContainerId || 'notification-container',
             notificationListId: options.notificationListId || 'notification-list',
-            notificationCountId: options.notificationCountId || 'notification-count',
             notificationBadgeClass: options.notificationBadgeClass || 'notification-badge',
             notificationPopupClass: options.notificationPopupClass || 'notification-popup',
             soundEnabled: options.soundEnabled !== undefined ? options.soundEnabled : true,
             vibrationEnabled: options.vibrationEnabled !== undefined ? options.vibrationEnabled : true,
             maxPopupNotifications: options.maxPopupNotifications || 3,
             popupDuration: options.popupDuration || 5000,
-            reconnectInterval: options.reconnectInterval || 3000,
             debug: options.debug || false,
         };
 
-        this.socket = null;
-        this.connected = false;
-        this.connecting = false;
         this.notifications = [];
         this.unreadCount = 0;
+        this.lastFetchTime = null;
         this.popupNotifications = [];
         this.notificationSound = new Audio('/static/sounds/notification.mp3');
+        this.pollingTimer = null;
 
         // Initialize
         this._initializeUI();
-        this.connect();
+        this.loadNotifications();
+        this.startPolling();
     }
 
     /**
@@ -60,123 +58,96 @@ class NotificationManager {
                 this.markAllAsRead();
             });
         }
-
-        // Load initial data
-        this.loadNotifications();
     }
 
     /**
-     * Get WebSocket URL based on current window location
-     * @private
-     * @returns {string} WebSocket URL
+     * Start polling for new notifications
      */
-    _getWebSocketUrl() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        return `${protocol}//${host}/ws/notifications/`;
-    }
-
-    /**
-     * Connect to the WebSocket server
-     */
-    connect() {
-        if (this.connected || this.connecting) return;
-        
-        this.connecting = true;
-        this._debug('Connecting to WebSocket...');
-        
-        try {
-            this.socket = new WebSocket(this.options.wsUrl);
-            
-            this.socket.onopen = () => {
-                this.connected = true;
-                this.connecting = false;
-                this._debug('WebSocket connected');
-            };
-            
-            this.socket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                this._handleWebSocketMessage(data);
-            };
-            
-            this.socket.onerror = (error) => {
-                this._debug('WebSocket error:', error);
-                this.connecting = false;
-            };
-            
-            this.socket.onclose = () => {
-                this.connected = false;
-                this.connecting = false;
-                this._debug('WebSocket disconnected. Reconnecting...');
-                
-                // Reconnect after delay
-                setTimeout(() => this.connect(), this.options.reconnectInterval);
-            };
-        } catch (error) {
-            this._debug('WebSocket connection error:', error);
-            this.connecting = false;
-            
-            // Retry connection after delay
-            setTimeout(() => this.connect(), this.options.reconnectInterval);
+    startPolling() {
+        // Clear any existing timer
+        if (this.pollingTimer) {
+            clearInterval(this.pollingTimer);
         }
+        
+        // Set up polling
+        this.pollingTimer = setInterval(() => {
+            this.checkForNewNotifications();
+        }, this.options.pollingInterval);
+        
+        // Also check when the page becomes visible again
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                this.checkForNewNotifications();
+            }
+        });
+        
+        this._debug('Notification polling started');
     }
 
     /**
-     * Handle WebSocket messages
-     * @private
-     * @param {Object} data - Message data
+     * Check for new notifications
      */
-    _handleWebSocketMessage(data) {
-        this._debug('Received WebSocket message:', data);
+    checkForNewNotifications() {
+        // Special query parameter for checking only new notifications
+        const timestamp = this.lastFetchTime ? new Date(this.lastFetchTime).toISOString() : '';
+        const url = `/api/notifications/?since=${encodeURIComponent(timestamp)}`;
         
-        switch (data.type) {
-            case 'notification':
-                if (data.action === 'created') {
-                    // Add new notification
-                    this.notifications.unshift({
-                        id: data.id,
-                        title: data.title,
-                        message: data.message,
-                        level: data.level,
-                        unread: true,
-                        created_at: data.created_at,
-                        action_url: data.action_url,
-                        action_text: data.action_text
-                    });
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update last fetch time
+            this.lastFetchTime = new Date().toISOString();
+            
+            // Process new notifications
+            if (data.notifications && data.notifications.length > 0) {
+                // Add new notifications to the beginning of the list
+                this.notifications = [...data.notifications, ...this.notifications];
+                
+                // Update unread count
+                this.unreadCount = data.unread_count;
+                
+                // Update UI
+                this._updateNotificationList();
+                this._updateUnreadCount();
+                
+                // Show popup notifications for new items
+                data.notifications.forEach(notification => {
+                    this._showPopupNotification(notification);
                     
-                    // Update UI
-                    this._updateNotificationList();
-                    
-                    // Show popup notification
-                    this._showPopupNotification(data);
-                    
-                    // Play sound if enabled
-                    if (this.options.soundEnabled) {
+                    // Play sound for first notification only (if enabled)
+                    if (this.options.soundEnabled && data.notifications.indexOf(notification) === 0) {
                         this.notificationSound.play().catch(e => {
                             this._debug('Error playing notification sound:', e);
                         });
                     }
-                    
-                    // Vibrate if enabled
-                    if (this.options.vibrationEnabled && navigator.vibrate) {
-                        navigator.vibrate(200);
-                    }
-                } else if (data.action === 'read') {
-                    // Mark notification as read
-                    this._markNotificationAsRead(data.id);
-                }
-                break;
+                });
                 
-            case 'unread_count':
-                // Update unread count
-                this.unreadCount = data.count;
-                this._updateUnreadCount();
-                break;
-        }
+                // Vibrate if enabled (only once)
+                if (this.options.vibrationEnabled && navigator.vibrate) {
+                    navigator.vibrate(200);
+                }
+            } else {
+                // Just update the unread count if it changed
+                if (this.unreadCount !== data.unread_count) {
+                    this.unreadCount = data.unread_count;
+                    this._updateUnreadCount();
+                }
+            }
+        })
+        .catch(error => {
+            this._debug('Error checking for new notifications:', error);
+        });
     }
 
     /**
-     * Load notifications from API
+     * Load all notifications from API
      * @param {boolean} unreadOnly - Whether to load only unread notifications
      */
     loadNotifications(unreadOnly = false) {
@@ -194,6 +165,7 @@ class NotificationManager {
         .then(data => {
             this.notifications = data.notifications;
             this.unreadCount = data.unread_count;
+            this.lastFetchTime = new Date().toISOString();
             
             this._updateNotificationList();
             this._updateUnreadCount();
@@ -231,14 +203,6 @@ class NotificationManager {
         .catch(error => {
             this._debug('Error marking notification as read:', error);
         });
-        
-        // Also send WebSocket message
-        if (this.connected) {
-            this.socket.send(JSON.stringify({
-                type: 'mark_read',
-                id: notificationId
-            }));
-        }
     }
 
     /**
@@ -258,11 +222,12 @@ class NotificationManager {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Mark all as read in local data
+                // Mark all notifications as read locally
                 this.notifications.forEach(notification => {
                     notification.unread = false;
                 });
                 
+                // Update UI
                 this.unreadCount = 0;
                 this._updateNotificationList();
                 this._updateUnreadCount();
@@ -271,30 +236,25 @@ class NotificationManager {
         .catch(error => {
             this._debug('Error marking all notifications as read:', error);
         });
-        
-        // Also send WebSocket message
-        if (this.connected) {
-            this.socket.send(JSON.stringify({
-                type: 'mark_all_read'
-            }));
-        }
     }
 
     /**
-     * Mark a notification as read locally
+     * Update notification as read in local data
      * @private
      * @param {string} notificationId - ID of the notification
      */
     _markNotificationAsRead(notificationId) {
-        const notification = this.notifications.find(n => n.id === notificationId);
-        if (notification && notification.unread) {
-            notification.unread = false;
-            this._updateNotificationList();
-        }
+        this.notifications.forEach(notification => {
+            if (notification.id === notificationId) {
+                notification.unread = false;
+            }
+        });
+        
+        this._updateNotificationList();
     }
 
     /**
-     * Update the notification list UI
+     * Update notification list UI
      * @private
      */
     _updateNotificationList() {
@@ -304,6 +264,7 @@ class NotificationManager {
         this.notificationList.innerHTML = '';
         
         if (this.notifications.length === 0) {
+            // Show empty state
             const emptyItem = document.createElement('li');
             emptyItem.className = 'notification-empty';
             emptyItem.textContent = 'No notifications';
@@ -311,201 +272,219 @@ class NotificationManager {
             return;
         }
         
-        // Add notifications
+        // Add notifications to list
         this.notifications.forEach(notification => {
-            const item = document.createElement('li');
-            item.className = `notification-item ${notification.unread ? 'unread' : 'read'} level-${notification.level}`;
-            item.setAttribute('data-id', notification.id);
+            const listItem = document.createElement('li');
+            listItem.className = 'notification-item';
+            if (notification.unread) {
+                listItem.classList.add('unread');
+            }
             
+            // Set data attributes
+            listItem.dataset.id = notification.id;
+            listItem.dataset.level = notification.level || 'info';
+            
+            // Create notification content
             const content = document.createElement('div');
             content.className = 'notification-content';
             
+            // Add title
             const title = document.createElement('div');
             title.className = 'notification-title';
             title.textContent = notification.title;
+            content.appendChild(title);
             
+            // Add message
             const message = document.createElement('div');
             message.className = 'notification-message';
             message.textContent = notification.message;
-            
-            const meta = document.createElement('div');
-            meta.className = 'notification-meta';
-            
-            const time = document.createElement('span');
-            time.className = 'notification-time';
-            time.textContent = this._formatDate(new Date(notification.created_at));
-            
-            content.appendChild(title);
             content.appendChild(message);
             
-            meta.appendChild(time);
+            // Add time
+            const time = document.createElement('div');
+            time.className = 'notification-time';
+            time.textContent = this._formatDate(notification.created_at);
+            content.appendChild(time);
             
-            if (notification.action_url && notification.action_text) {
+            // Add action link if present
+            if (notification.action_url) {
                 const action = document.createElement('a');
                 action.className = 'notification-action';
                 action.href = notification.action_url;
-                action.textContent = notification.action_text;
-                meta.appendChild(action);
+                action.textContent = notification.action_text || 'View';
+                content.appendChild(action);
             }
             
-            content.appendChild(meta);
-            item.appendChild(content);
+            listItem.appendChild(content);
             
+            // Add click handler to mark as read
             if (notification.unread) {
-                const markReadBtn = document.createElement('button');
-                markReadBtn.className = 'mark-read-btn';
-                markReadBtn.innerHTML = '<span class="sr-only">Mark as read</span><i class="fas fa-check"></i>';
-                markReadBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.markAsRead(notification.id);
+                listItem.addEventListener('click', (e) => {
+                    // Don't mark as read if clicking on action link
+                    if (e.target.tagName !== 'A') {
+                        this.markAsRead(notification.id);
+                        
+                        // Follow action URL if present
+                        if (notification.action_url) {
+                            window.location.href = notification.action_url;
+                        }
+                    }
                 });
-                item.appendChild(markReadBtn);
             }
             
-            // Add click event to mark as read when clicked
-            item.addEventListener('click', () => {
-                if (notification.unread) {
-                    this.markAsRead(notification.id);
-                }
-            });
-            
-            this.notificationList.appendChild(item);
+            this.notificationList.appendChild(listItem);
         });
     }
 
     /**
-     * Update unread count in UI
+     * Update unread notification count in UI
      * @private
      */
     _updateUnreadCount() {
-        // Update count elements
-        Array.from(this.notificationCountElements).forEach(element => {
-            element.textContent = this.unreadCount;
-            element.style.display = this.unreadCount > 0 ? 'inline-block' : 'none';
-        });
+        // Update all badge elements
+        for (const element of this.notificationCountElements) {
+            element.textContent = this.unreadCount > 0 ? this.unreadCount : '';
+            element.style.display = this.unreadCount > 0 ? 'flex' : 'none';
+        }
     }
 
     /**
-     * Show a popup notification
+     * Show popup notification
      * @private
      * @param {Object} notification - Notification data
      */
     _showPopupNotification(notification) {
-        // Create popup element
-        const popup = document.createElement('div');
-        popup.className = `${this.options.notificationPopupClass} level-${notification.level}`;
-        popup.setAttribute('data-id', notification.id);
-        
-        const title = document.createElement('div');
-        title.className = 'popup-title';
-        title.textContent = notification.title;
-        
-        const message = document.createElement('div');
-        message.className = 'popup-message';
-        message.textContent = notification.message;
-        
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'popup-close';
-        closeBtn.innerHTML = '&times;';
-        closeBtn.addEventListener('click', () => {
-            this._removePopupNotification(popup);
-            this.markAsRead(notification.id);
-        });
-        
-        popup.appendChild(closeBtn);
-        popup.appendChild(title);
-        popup.appendChild(message);
-        
-        if (notification.action_url && notification.action_text) {
-            const action = document.createElement('a');
-            action.className = 'popup-action';
-            action.href = notification.action_url;
-            action.textContent = notification.action_text;
-            popup.appendChild(action);
+        // Limit number of popups
+        if (this.popupNotifications.length >= this.options.maxPopupNotifications) {
+            const oldestPopup = this.popupNotifications.shift();
+            this._removePopupNotification(oldestPopup);
         }
         
-        // Add to popup container
+        // Create popup element
+        const popup = document.createElement('div');
+        popup.className = this.options.notificationPopupClass;
+        popup.dataset.id = notification.id;
+        popup.dataset.level = notification.level || 'info';
+        
+        // Add close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'notification-popup-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.addEventListener('click', () => {
+            this._removePopupNotification(popup);
+        });
+        popup.appendChild(closeBtn);
+        
+        // Add content
+        const content = document.createElement('div');
+        content.className = 'notification-popup-content';
+        
+        const title = document.createElement('div');
+        title.className = 'notification-popup-title';
+        title.textContent = notification.title;
+        content.appendChild(title);
+        
+        const message = document.createElement('div');
+        message.className = 'notification-popup-message';
+        message.textContent = notification.message;
+        content.appendChild(message);
+        
+        popup.appendChild(content);
+        
+        // Add click handler
+        popup.addEventListener('click', (e) => {
+            if (e.target !== closeBtn && e.target !== closeBtn.firstChild) {
+                this.markAsRead(notification.id);
+                this._removePopupNotification(popup);
+                
+                // Follow action URL if present
+                if (notification.action_url) {
+                    window.location.href = notification.action_url;
+                }
+            }
+        });
+        
+        // Add to document
         this.popupContainer.appendChild(popup);
         this.popupNotifications.push(popup);
         
-        // Remove old popups if exceeding max
-        while (this.popupNotifications.length > this.options.maxPopupNotifications) {
-            const oldPopup = this.popupNotifications.shift();
-            if (oldPopup && oldPopup.parentNode) {
-                oldPopup.parentNode.removeChild(oldPopup);
-            }
-        }
-        
         // Auto remove after duration
         setTimeout(() => {
-            this._removePopupNotification(popup);
+            if (this.popupNotifications.includes(popup)) {
+                this._removePopupNotification(popup);
+            }
         }, this.options.popupDuration);
     }
 
     /**
-     * Remove a popup notification
+     * Remove popup notification
      * @private
      * @param {HTMLElement} popup - Popup element to remove
      */
     _removePopupNotification(popup) {
+        // Remove from DOM
         if (popup && popup.parentNode) {
-            popup.classList.add('fade-out');
-            setTimeout(() => {
-                if (popup.parentNode) {
-                    popup.parentNode.removeChild(popup);
-                }
-                this.popupNotifications = this.popupNotifications.filter(p => p !== popup);
-            }, 300);
+            popup.parentNode.removeChild(popup);
+        }
+        
+        // Remove from tracking array
+        const index = this.popupNotifications.indexOf(popup);
+        if (index !== -1) {
+            this.popupNotifications.splice(index, 1);
         }
     }
 
     /**
      * Format date for display
      * @private
-     * @param {Date} date - Date to format
-     * @returns {string} Formatted date string
+     * @param {string} dateString - ISO date string
+     * @returns {string} Formatted date
      */
-    _formatDate(date) {
-        const now = new Date();
-        const diff = Math.floor((now - date) / 1000);
+    _formatDate(dateString) {
+        if (!dateString) return '';
         
-        if (diff < 60) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        
+        if (diff < 60000) { // less than 1 minute
             return 'just now';
-        } else if (diff < 3600) {
-            const minutes = Math.floor(diff / 60);
-            return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-        } else if (diff < 86400) {
-            const hours = Math.floor(diff / 3600);
-            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-        } else if (diff < 604800) {
-            const days = Math.floor(diff / 86400);
-            return `${days} day${days > 1 ? 's' : ''} ago`;
+        } else if (diff < 3600000) { // less than 1 hour
+            return `${Math.round(diff / 60000)} min ago`;
+        } else if (diff < 86400000) { // less than 1 day
+            return `${Math.round(diff / 3600000)} hours ago`;
+        } else if (diff < 604800000) { // less than 1 week
+            return `${Math.round(diff / 86400000)} days ago`;
         } else {
-            return date.toLocaleDateString();
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         }
     }
 
     /**
-     * Get CSRF token from cookies
+     * Get CSRF token from cookie
      * @private
      * @returns {string} CSRF token
      */
     _getCsrfToken() {
         const name = 'csrftoken';
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                return decodeURIComponent(cookie.substring(name.length + 1));
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
         }
-        return '';
+        return cookieValue;
     }
 
     /**
-     * Debug logging
+     * Debug log
      * @private
+     * @param {...*} args - Arguments to log
      */
     _debug(...args) {
         if (this.options.debug) {
@@ -514,12 +493,11 @@ class NotificationManager {
     }
 }
 
-// Initialize on document ready
-document.addEventListener('DOMContentLoaded', () => {
-    // Only initialize if user is logged in (check for presence of notification elements)
-    if (document.getElementById('notification-container')) {
-        window.notificationManager = new NotificationManager({
-            debug: false
-        });
-    }
+// Initialize notification manager when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Create global notification manager
+    window.notificationManager = new NotificationManager({
+        pollingInterval: 30000, // 30 seconds
+        debug: false
+    });
 }); 

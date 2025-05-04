@@ -24,6 +24,7 @@ def get_notifications(request):
         - unread_only: If 'true', only return unread notifications
         - limit: Number of notifications to return (default: 20)
         - offset: Starting point for pagination (default: 0)
+        - since: ISO timestamp to get only notifications created after this time
         
     Returns:
         JsonResponse: JSON response with notifications data
@@ -32,11 +33,23 @@ def get_notifications(request):
     unread_only = request.GET.get('unread_only', 'false').lower() == 'true'
     limit = int(request.GET.get('limit', 20))
     offset = int(request.GET.get('offset', 0))
+    since = request.GET.get('since', '')
     
     # Query notifications
     query = Q(recipient=user)
     if unread_only:
         query &= Q(unread=True)
+    
+    # Add time filter if 'since' parameter provided
+    if since:
+        try:
+            # Parse the timestamp (works with ISO format)
+            from django.utils.dateparse import parse_datetime
+            since_time = parse_datetime(since)
+            if since_time:
+                query &= Q(created_at__gt=since_time)
+        except Exception as e:
+            logger.warning(f"Error parsing 'since' parameter: {e}")
     
     notifications = Notification.objects.filter(query).order_by('-created_at')[offset:offset+limit]
     total_count = Notification.objects.filter(query).count()
