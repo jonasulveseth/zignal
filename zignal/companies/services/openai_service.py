@@ -251,9 +251,6 @@ class CompanyOpenAIService:
         Returns:
             dict: Information about the operation
         """
-        import boto3
-        import tempfile
-        
         if not company.openai_assistant_id:
             return {
                 "success": False,
@@ -263,20 +260,71 @@ class CompanyOpenAIService:
         logger.info(f"Adding S3 file to vector store - bucket: {s3_bucket}, key: {s3_key}")
         
         try:
-            # If no file_name provided, use the last part of the S3 key
+            # Handle S3 path issues by trying multiple path variations
+            # This handles the case of double 'media/' prefixes or missing 'media/' prefix
+            import boto3
+            import tempfile
+            from django.conf import settings
+            from botocore.exceptions import ClientError
+            
+            # If no file_name provided, use the basename from the key
             if not file_name:
-                file_name = s3_key.split('/')[-1]
+                file_name = os.path.basename(s3_key)
+            
+            # Create S3 client
+            s3 = boto3.client(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_S3_REGION_NAME
+            )
+            
+            # Try different path variations to make sure we find the file
+            keys_to_try = [s3_key]
+            
+            # If the key doesn't start with media/, try with it
+            if not s3_key.startswith('media/'):
+                keys_to_try.append(f"media/{s3_key}")
+            
+            # If the key starts with media/, try without it
+            if s3_key.startswith('media/'):
+                keys_to_try.append(s3_key[6:])  # Remove 'media/' prefix
+            
+            # Also try media/media/ prefix (double media)
+            if not s3_key.startswith('media/media/') and not s3_key.startswith('media/'):
+                keys_to_try.append(f"media/media/{s3_key}")
+            
+            # Try to find the correct key in S3
+            working_key = None
+            for test_key in keys_to_try:
+                try:
+                    # Check if the object exists
+                    s3.head_object(Bucket=s3_bucket, Key=test_key)
+                    working_key = test_key
+                    logger.info(f"Found existing S3 object with key: {test_key}")
+                    break
+                except ClientError:
+                    logger.info(f"S3 object not found with key: {test_key}")
+                    continue
+            
+            if not working_key:
+                logger.error(f"Could not find S3 object with any of these keys: {keys_to_try}")
+                return {
+                    "success": False,
+                    "error": f"S3 file not found: {s3_key}"
+                }
+            
+            # Now we have the correct S3 key, continue with OpenAI integration
+            # Use the working_key instead of original s3_key
+            logger.info(f"Using S3 key: {working_key} (original: {s3_key})")
             
             # We need to use an intermediate step with a temporary file
             # because OpenAI's API doesn't support direct S3 upload yet
             temp_file = tempfile.NamedTemporaryFile(delete=False)
             try:
-                # Create S3 client
-                s3 = boto3.client('s3')
-                
-                # Download the file to a temporary location
+                # Download the file to a temporary location using the working key
                 logger.info(f"Downloading from S3 to temp file: {temp_file.name}")
-                s3.download_file(s3_bucket, s3_key, temp_file.name)
+                s3.download_file(s3_bucket, working_key, temp_file.name)
                 
                 # Close the file to ensure it's fully written
                 temp_file.close()
@@ -287,7 +335,8 @@ class CompanyOpenAIService:
                     file_metadata = {
                         "source": "s3",
                         "bucket": s3_bucket,
-                        "key": s3_key,
+                        "key": working_key,
+                        "original_key": s3_key,
                     }
                 
                 # Now upload the file to OpenAI

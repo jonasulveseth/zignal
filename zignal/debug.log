@@ -2348,3 +2348,205 @@ INFO 2025-04-20 19:54:21,038 autoreload /Users/jonasulveseth/Sites/zignal_django
 INFO 2025-04-20 19:54:21,038 autoreload /Users/jonasulveseth/Sites/zignal_django/zignal/zignal/config/settings.py changed, reloading.
 INFO 2025-04-20 19:54:21,361 autoreload /Users/jonasulveseth/Sites/zignal_django/zignal/zignal/config/settings.py changed, reloading.
 INFO 2025-04-20 19:54:21,361 autoreload /Users/jonasulveseth/Sites/zignal_django/zignal/zignal/config/settings.py changed, reloading.
+INFO 2025-05-04 15:41:42,326 tasks Processing file for vector store: 5 (Attempt 1)
+INFO 2025-05-04 15:41:42,355 tasks Processing file for vector store: 6 (Attempt 1)
+INFO 2025-05-04 15:41:42,362 tasks File name: fbf_ab_aktioverlatelse, Storage path: datasilo/company/jonas-company/8a2404b4-6030-452e-8d4b-5725ab5503f0.pdf
+INFO 2025-05-04 15:41:42,362 tasks File name: fbf_ab_aktioverlatelse, Storage path: datasilo/company/jonas-company/f3ae5352-f36a-4900-bf08-298a9f0405f4.pdf
+WARNING 2025-05-04 15:41:42,364 tasks Company jonas company has no vector store ID. Creating one...
+WARNING 2025-05-04 15:41:42,364 tasks Company jonas company has no vector store ID. Creating one...
+INFO 2025-05-04 15:41:42,400 openai_service Setting up OpenAI resources for company: jonas company (ID: 1)
+INFO 2025-05-04 15:41:42,400 openai_service Setting up OpenAI resources for company: jonas company (ID: 1)
+INFO 2025-05-04 15:41:43,068 openai_service Created vector store for company jonas company: vs_68178ab6f6a48191a0308c2c1c6e392a
+INFO 2025-05-04 15:41:43,146 openai_service Created vector store for company jonas company: vs_68178ab70ae88191aa1ddf2ed510e54a
+INFO 2025-05-04 15:41:44,077 openai_service Created assistant for company jonas company: asst_NBkhAIeAWPosQyfmeGBJ3JZY
+INFO 2025-05-04 15:41:44,078 openai_service Successfully created OpenAI resources for company: jonas company
+INFO 2025-05-04 15:41:44,082 tasks Created vector store for company: vs_68178ab70ae88191aa1ddf2ed510e54a
+INFO 2025-05-04 15:41:44,087 openai_service Created assistant for company jonas company: asst_9UlFvBkrey6mhXTLi5Xgc8Hq
+INFO 2025-05-04 15:41:44,087 openai_service Successfully created OpenAI resources for company: jonas company
+INFO 2025-05-04 15:41:44,090 tasks Created vector store for company: vs_68178ab6f6a48191a0308c2c1c6e392a
+INFO 2025-05-04 15:41:44,108 tasks Using S3 storage: False (Storage class: FileSystemStorage)
+INFO 2025-05-04 15:41:44,108 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 15:41:44,112 tasks File downloaded successfully to /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp9xqsbyhl.pdf (42121 bytes)
+INFO 2025-05-04 15:41:44,113 tasks Core processing function for file: 5, S3: False
+INFO 2025-05-04 15:41:44,161 tasks Using S3 storage: False (Storage class: FileSystemStorage)
+INFO 2025-05-04 15:41:44,162 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 15:41:44,163 tasks File downloaded successfully to /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp7dg2jig7.pdf (42121 bytes)
+INFO 2025-05-04 15:41:44,164 tasks Core processing function for file: 6, S3: False
+ERROR 2025-05-04 15:41:44,202 tasks Error adding file to vector store: Company does not have an OpenAI assistant configured
+INFO 2025-05-04 15:41:44,202 tasks Temporary file deleted
+ERROR 2025-05-04 15:41:44,206 tasks Error adding file to vector store: Company does not have an OpenAI assistant configured
+INFO 2025-05-04 15:41:44,206 tasks Temporary file deleted
+INFO 2025-05-04 15:43:51,021 tasks Processing file for vector store: 8 (Attempt 1)
+INFO 2025-05-04 15:43:51,058 tasks Processing file for vector store: 7 (Attempt 1)
+INFO 2025-05-04 15:43:51,065 tasks File name: Bowter Sommerkontrakt 2024 Elbåthavn i næring-1, Storage path: datasilo/company/jonas-company/6822b5d6-89e9-498b-8cc0-7692b96814d9.pdf
+INFO 2025-05-04 15:43:51,065 tasks File name: Bowter Sommerkontrakt 2024 Elbåthavn i næring-1, Storage path: datasilo/company/jonas-company/1a9348dc-033d-4d92-86ca-bb5c9df9a3c4.pdf
+INFO 2025-05-04 15:43:51,099 tasks Using S3 storage: False (Storage class: FileSystemStorage)
+INFO 2025-05-04 15:43:51,099 tasks Using S3 storage: False (Storage class: FileSystemStorage)
+INFO 2025-05-04 15:43:51,099 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 15:43:51,099 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 15:43:51,100 tasks File downloaded successfully to /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpqy1m0qmt.pdf (146551 bytes)
+INFO 2025-05-04 15:43:51,100 tasks Core processing function for file: 8, S3: False
+INFO 2025-05-04 15:43:51,100 tasks File downloaded successfully to /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmps_zjkcle.pdf (146551 bytes)
+INFO 2025-05-04 15:43:51,100 tasks Core processing function for file: 7, S3: False
+INFO 2025-05-04 15:43:51,900 openai_service Uploaded file Bowter Sommerkontrakt 2024 Elbåthavn i næring-1 to OpenAI with ID: file-UkhXAiZbDnLJFTz73Rtkey
+INFO 2025-05-04 15:43:52,219 openai_service Uploaded file Bowter Sommerkontrakt 2024 Elbåthavn i næring-1 to OpenAI with ID: file-UqJQQRH6feuZnC4uggbXB6
+INFO 2025-05-04 15:43:52,799 openai_service Added file to vector store batch: vsfb_96c5a1bea7e24bb5a82c6ad147cdaa38
+INFO 2025-05-04 15:43:52,809 tasks File 7 added to vector store with ID: file-UkhXAiZbDnLJFTz73Rtkey
+INFO 2025-05-04 15:43:52,883 tasks Temporary file deleted
+INFO 2025-05-04 15:43:52,884 openai_service Added file to vector store batch: vsfb_e672a29772984eb8b6436ba838c8c812
+INFO 2025-05-04 15:43:52,889 tasks File 8 added to vector store with ID: file-UqJQQRH6feuZnC4uggbXB6
+INFO 2025-05-04 15:43:52,943 tasks Temporary file deleted
+INFO 2025-05-04 15:56:48,945 tasks Processing file for vector store: 9 (Attempt 1)
+INFO 2025-05-04 15:56:48,949 tasks File name: Bowter_offert_66, Storage path: datasilo/company/jonas-company/93ac2aac-d7fb-4af3-83a4-b7fc8b72f3ce.pdf
+INFO 2025-05-04 15:56:49,052 tasks Processing file for vector store: 10 (Attempt 1)
+INFO 2025-05-04 15:56:49,055 tasks File name: Bowter_offert_66, Storage path: datasilo/company/jonas-company/b0ae1f9d-7efc-4ef8-a6fb-2bffcdbb5fab.pdf
+INFO 2025-05-04 15:56:49,070 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 15:56:49,070 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 15:56:49,070 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 15:56:49,071 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 15:56:49,071 tasks Original file path: datasilo/company/jonas-company/b0ae1f9d-7efc-4ef8-a6fb-2bffcdbb5fab.pdf
+INFO 2025-05-04 15:56:49,071 tasks Original file path: datasilo/company/jonas-company/93ac2aac-d7fb-4af3-83a4-b7fc8b72f3ce.pdf
+INFO 2025-05-04 15:56:49,071 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/b0ae1f9d-7efc-4ef8-a6fb-2bffcdbb5fab.pdf', 'media/datasilo/company/jonas-company/b0ae1f9d-7efc-4ef8-a6fb-2bffcdbb5fab.pdf']
+INFO 2025-05-04 15:56:49,071 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/93ac2aac-d7fb-4af3-83a4-b7fc8b72f3ce.pdf', 'media/datasilo/company/jonas-company/93ac2aac-d7fb-4af3-83a4-b7fc8b72f3ce.pdf']
+INFO 2025-05-04 15:56:49,502 tasks Found existing S3 object with key: datasilo/company/jonas-company/b0ae1f9d-7efc-4ef8-a6fb-2bffcdbb5fab.pdf
+INFO 2025-05-04 15:56:49,503 tasks Using direct S3 access with bucket=zignalse, key=datasilo/company/jonas-company/b0ae1f9d-7efc-4ef8-a6fb-2bffcdbb5fab.pdf
+INFO 2025-05-04 15:56:49,503 tasks Core processing function for file: 10, S3: True
+INFO 2025-05-04 15:56:49,620 tasks Found existing S3 object with key: datasilo/company/jonas-company/93ac2aac-d7fb-4af3-83a4-b7fc8b72f3ce.pdf
+INFO 2025-05-04 15:56:49,620 tasks Using direct S3 access with bucket=zignalse, key=datasilo/company/jonas-company/93ac2aac-d7fb-4af3-83a4-b7fc8b72f3ce.pdf
+INFO 2025-05-04 15:56:49,620 tasks Core processing function for file: 9, S3: True
+INFO 2025-05-04 15:56:49,716 openai_service Adding S3 file to vector store - bucket: zignalse, key: datasilo/company/jonas-company/b0ae1f9d-7efc-4ef8-a6fb-2bffcdbb5fab.pdf
+INFO 2025-05-04 15:56:49,720 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpp46gj288
+INFO 2025-05-04 15:56:49,721 openai_service Adding S3 file to vector store - bucket: zignalse, key: datasilo/company/jonas-company/93ac2aac-d7fb-4af3-83a4-b7fc8b72f3ce.pdf
+INFO 2025-05-04 15:56:49,724 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp_2imcn9y
+INFO 2025-05-04 15:56:49,953 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp_2imcn9y
+ERROR 2025-05-04 15:56:49,953 openai_service Error adding S3 file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+ERROR 2025-05-04 15:56:49,955 tasks Error adding file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+INFO 2025-05-04 15:56:49,956 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpp46gj288
+ERROR 2025-05-04 15:56:49,956 openai_service Error adding S3 file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+ERROR 2025-05-04 15:56:49,957 tasks Error adding file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+INFO 2025-05-04 16:00:12,643 tasks Processing file for vector store: 11 (Attempt 1)
+INFO 2025-05-04 16:00:12,648 tasks File name: fbf_ab_aktioverlatelse, Storage path: datasilo/company/jonas-company/f120e459-3118-4423-9865-10700240d743.pdf
+INFO 2025-05-04 16:00:12,659 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 16:00:12,659 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 16:00:12,659 tasks Original file path: datasilo/company/jonas-company/f120e459-3118-4423-9865-10700240d743.pdf
+INFO 2025-05-04 16:00:12,659 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/f120e459-3118-4423-9865-10700240d743.pdf', 'media/datasilo/company/jonas-company/f120e459-3118-4423-9865-10700240d743.pdf']
+INFO 2025-05-04 16:00:12,759 tasks Processing file for vector store: 12 (Attempt 1)
+INFO 2025-05-04 16:00:12,764 tasks File name: fbf_ab_aktioverlatelse, Storage path: datasilo/company/jonas-company/33486531-7f10-4123-b5f0-d4ffdcb514b3.pdf
+INFO 2025-05-04 16:00:12,779 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 16:00:12,779 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 16:00:12,780 tasks Original file path: datasilo/company/jonas-company/33486531-7f10-4123-b5f0-d4ffdcb514b3.pdf
+INFO 2025-05-04 16:00:12,780 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/33486531-7f10-4123-b5f0-d4ffdcb514b3.pdf', 'media/datasilo/company/jonas-company/33486531-7f10-4123-b5f0-d4ffdcb514b3.pdf']
+INFO 2025-05-04 16:00:13,003 tasks Found existing S3 object with key: datasilo/company/jonas-company/f120e459-3118-4423-9865-10700240d743.pdf
+INFO 2025-05-04 16:00:13,003 tasks Using direct S3 access with bucket=zignalse, key=datasilo/company/jonas-company/f120e459-3118-4423-9865-10700240d743.pdf
+INFO 2025-05-04 16:00:13,003 tasks Core processing function for file: 11, S3: True
+INFO 2025-05-04 16:00:13,109 tasks Found existing S3 object with key: datasilo/company/jonas-company/33486531-7f10-4123-b5f0-d4ffdcb514b3.pdf
+INFO 2025-05-04 16:00:13,109 tasks Using direct S3 access with bucket=zignalse, key=datasilo/company/jonas-company/33486531-7f10-4123-b5f0-d4ffdcb514b3.pdf
+INFO 2025-05-04 16:00:13,109 tasks Core processing function for file: 12, S3: True
+INFO 2025-05-04 16:00:13,203 openai_service Adding S3 file to vector store - bucket: zignalse, key: datasilo/company/jonas-company/f120e459-3118-4423-9865-10700240d743.pdf
+INFO 2025-05-04 16:00:13,208 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpxwwyq4n4
+INFO 2025-05-04 16:00:13,209 openai_service Adding S3 file to vector store - bucket: zignalse, key: datasilo/company/jonas-company/33486531-7f10-4123-b5f0-d4ffdcb514b3.pdf
+INFO 2025-05-04 16:00:13,211 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp3xd7vlw5
+INFO 2025-05-04 16:00:13,387 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpxwwyq4n4
+ERROR 2025-05-04 16:00:13,387 openai_service Error adding S3 file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+ERROR 2025-05-04 16:00:13,389 tasks Error adding file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+INFO 2025-05-04 16:00:13,416 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp3xd7vlw5
+ERROR 2025-05-04 16:00:13,416 openai_service Error adding S3 file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+ERROR 2025-05-04 16:00:13,418 tasks Error adding file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+INFO 2025-05-04 16:02:54,485 tasks Processing file for vector store: 13 (Attempt 1)
+INFO 2025-05-04 16:02:54,558 tasks Processing file for vector store: 14 (Attempt 1)
+INFO 2025-05-04 16:02:54,565 tasks File name: Bowter_offert_66, Storage path: datasilo/company/jonas-company/580b4239-e093-4b6a-8755-d58b9449f5f5.pdf
+INFO 2025-05-04 16:02:54,565 tasks File name: Bowter_offert_66, Storage path: datasilo/company/jonas-company/3fcc7b1e-1d8f-40c3-9924-8246343cccb6.pdf
+INFO 2025-05-04 16:02:54,575 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 16:02:54,575 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 16:02:54,575 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 16:02:54,575 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-04 16:02:54,576 tasks Original file path: datasilo/company/jonas-company/580b4239-e093-4b6a-8755-d58b9449f5f5.pdf
+INFO 2025-05-04 16:02:54,576 tasks Original file path: datasilo/company/jonas-company/3fcc7b1e-1d8f-40c3-9924-8246343cccb6.pdf
+INFO 2025-05-04 16:02:54,576 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/580b4239-e093-4b6a-8755-d58b9449f5f5.pdf', 'media/datasilo/company/jonas-company/580b4239-e093-4b6a-8755-d58b9449f5f5.pdf']
+INFO 2025-05-04 16:02:54,576 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/3fcc7b1e-1d8f-40c3-9924-8246343cccb6.pdf', 'media/datasilo/company/jonas-company/3fcc7b1e-1d8f-40c3-9924-8246343cccb6.pdf']
+INFO 2025-05-04 16:02:54,861 tasks Found existing S3 object with key: datasilo/company/jonas-company/3fcc7b1e-1d8f-40c3-9924-8246343cccb6.pdf
+INFO 2025-05-04 16:02:54,861 tasks Using direct S3 access with bucket=zignalse, key=datasilo/company/jonas-company/3fcc7b1e-1d8f-40c3-9924-8246343cccb6.pdf
+INFO 2025-05-04 16:02:54,861 tasks Core processing function for file: 14, S3: True
+INFO 2025-05-04 16:02:54,983 tasks Found existing S3 object with key: datasilo/company/jonas-company/580b4239-e093-4b6a-8755-d58b9449f5f5.pdf
+INFO 2025-05-04 16:02:54,983 tasks Using direct S3 access with bucket=zignalse, key=datasilo/company/jonas-company/580b4239-e093-4b6a-8755-d58b9449f5f5.pdf
+INFO 2025-05-04 16:02:54,983 tasks Core processing function for file: 13, S3: True
+INFO 2025-05-04 16:02:55,091 openai_service Adding S3 file to vector store - bucket: zignalse, key: datasilo/company/jonas-company/3fcc7b1e-1d8f-40c3-9924-8246343cccb6.pdf
+INFO 2025-05-04 16:02:55,094 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpwiia375s
+INFO 2025-05-04 16:02:55,096 openai_service Adding S3 file to vector store - bucket: zignalse, key: datasilo/company/jonas-company/580b4239-e093-4b6a-8755-d58b9449f5f5.pdf
+INFO 2025-05-04 16:02:55,098 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp14npxbjw
+INFO 2025-05-04 16:02:55,306 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpwiia375s
+ERROR 2025-05-04 16:02:55,306 openai_service Error adding S3 file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+ERROR 2025-05-04 16:02:55,308 tasks Error adding file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+INFO 2025-05-04 16:02:55,316 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp14npxbjw
+ERROR 2025-05-04 16:02:55,316 openai_service Error adding S3 file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+ERROR 2025-05-04 16:02:55,317 tasks Error adding file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+INFO 2025-05-04 16:08:43,374 tasks Processing file for vector store: 15 (Attempt 1)
+INFO 2025-05-04 16:08:43,381 tasks File name: Bowter_offert_66, Storage path: datasilo/company/jonas-company/ddd3034e-e03b-4c2c-9316-6e610ac6115c.pdf
+INFO 2025-05-04 16:08:43,407 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 16:08:43,407 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=silo
+INFO 2025-05-04 16:08:43,407 tasks Original file path: datasilo/company/jonas-company/ddd3034e-e03b-4c2c-9316-6e610ac6115c.pdf
+INFO 2025-05-04 16:08:43,407 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/ddd3034e-e03b-4c2c-9316-6e610ac6115c.pdf', 'media/datasilo/company/jonas-company/ddd3034e-e03b-4c2c-9316-6e610ac6115c.pdf', 'silo/datasilo/company/jonas-company/ddd3034e-e03b-4c2c-9316-6e610ac6115c.pdf']
+INFO 2025-05-04 16:08:43,500 tasks Processing file for vector store: 16 (Attempt 1)
+INFO 2025-05-04 16:08:43,505 tasks File name: Bowter_offert_66, Storage path: datasilo/company/jonas-company/c610eac7-b378-46de-98c7-fad0a903aff3.pdf
+INFO 2025-05-04 16:08:43,519 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 16:08:43,519 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=silo
+INFO 2025-05-04 16:08:43,519 tasks Original file path: datasilo/company/jonas-company/c610eac7-b378-46de-98c7-fad0a903aff3.pdf
+INFO 2025-05-04 16:08:43,519 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/c610eac7-b378-46de-98c7-fad0a903aff3.pdf', 'media/datasilo/company/jonas-company/c610eac7-b378-46de-98c7-fad0a903aff3.pdf', 'silo/datasilo/company/jonas-company/c610eac7-b378-46de-98c7-fad0a903aff3.pdf']
+INFO 2025-05-04 16:08:43,753 tasks Found existing S3 object with key: datasilo/company/jonas-company/ddd3034e-e03b-4c2c-9316-6e610ac6115c.pdf
+INFO 2025-05-04 16:08:43,753 tasks Using direct S3 access with bucket=zignalse, key=datasilo/company/jonas-company/ddd3034e-e03b-4c2c-9316-6e610ac6115c.pdf
+INFO 2025-05-04 16:08:43,753 tasks Core processing function for file: 15, S3: True
+INFO 2025-05-04 16:08:43,851 tasks Found existing S3 object with key: datasilo/company/jonas-company/c610eac7-b378-46de-98c7-fad0a903aff3.pdf
+INFO 2025-05-04 16:08:43,851 tasks Using direct S3 access with bucket=zignalse, key=datasilo/company/jonas-company/c610eac7-b378-46de-98c7-fad0a903aff3.pdf
+INFO 2025-05-04 16:08:43,851 tasks Core processing function for file: 16, S3: True
+INFO 2025-05-04 16:08:43,942 openai_service Adding S3 file to vector store - bucket: zignalse, key: datasilo/company/jonas-company/ddd3034e-e03b-4c2c-9316-6e610ac6115c.pdf
+INFO 2025-05-04 16:08:43,946 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmporxtz06u
+INFO 2025-05-04 16:08:43,947 openai_service Adding S3 file to vector store - bucket: zignalse, key: datasilo/company/jonas-company/c610eac7-b378-46de-98c7-fad0a903aff3.pdf
+INFO 2025-05-04 16:08:43,949 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp4ns8vcv0
+INFO 2025-05-04 16:08:44,149 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmporxtz06u
+ERROR 2025-05-04 16:08:44,149 openai_service Error adding S3 file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+ERROR 2025-05-04 16:08:44,151 tasks Error adding file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+INFO 2025-05-04 16:08:44,160 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmp4ns8vcv0
+ERROR 2025-05-04 16:08:44,160 openai_service Error adding S3 file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+ERROR 2025-05-04 16:08:44,161 tasks Error adding file to vector store: An error occurred (404) when calling the HeadObject operation: Not Found
+INFO 2025-05-04 16:27:32,424 tasks Processing file for vector store: 17 (Attempt 1)
+INFO 2025-05-04 16:27:32,430 tasks File name: Bowter_offert_69, Storage path: datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf
+INFO 2025-05-04 16:27:32,461 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 16:27:32,461 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=silo
+INFO 2025-05-04 16:27:32,461 tasks Original file path: datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf
+INFO 2025-05-04 16:27:32,461 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf', 'media/datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf', 'silo/datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf']
+INFO 2025-05-04 16:27:32,568 tasks Processing file for vector store: 18 (Attempt 1)
+INFO 2025-05-04 16:27:32,571 tasks File name: Bowter_offert_69, Storage path: datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf
+INFO 2025-05-04 16:27:32,581 tasks Using S3 storage: True (Storage class: ForcedS3Storage)
+INFO 2025-05-04 16:27:32,581 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=silo
+INFO 2025-05-04 16:27:32,581 tasks Original file path: datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf
+INFO 2025-05-04 16:27:32,582 tasks Will try these S3 keys for direct access: ['datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf', 'media/datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf', 'silo/datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf']
+WARNING 2025-05-04 16:27:32,838 tasks File not found with storage.exists, trying direct boto3 access
+WARNING 2025-05-04 16:27:32,898 tasks File not found with storage.exists, trying direct boto3 access
+WARNING 2025-05-04 16:27:33,117 tasks Boto3 head_object failed for key: datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf - An error occurred (404) when calling the HeadObject operation: Not Found
+WARNING 2025-05-04 16:27:33,146 tasks Boto3 head_object failed for key: media/datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf - An error occurred (404) when calling the HeadObject operation: Not Found
+WARNING 2025-05-04 16:27:33,165 tasks Boto3 head_object failed for key: datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf - An error occurred (404) when calling the HeadObject operation: Not Found
+INFO 2025-05-04 16:27:33,170 tasks Found existing S3 object with boto3 key: silo/datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf
+INFO 2025-05-04 16:27:33,170 tasks Using direct boto3 S3 access with bucket=zignalse, key=silo/datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf
+INFO 2025-05-04 16:27:33,170 tasks Core processing function for file: 17, S3: True
+WARNING 2025-05-04 16:27:33,298 tasks Boto3 head_object failed for key: media/datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf - An error occurred (404) when calling the HeadObject operation: Not Found
+INFO 2025-05-04 16:27:33,307 openai_service Adding S3 file to vector store - bucket: zignalse, key: silo/datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf
+INFO 2025-05-04 16:27:33,325 tasks Found existing S3 object with boto3 key: silo/datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf
+INFO 2025-05-04 16:27:33,325 tasks Using direct boto3 S3 access with bucket=zignalse, key=silo/datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf
+INFO 2025-05-04 16:27:33,325 tasks Core processing function for file: 18, S3: True
+INFO 2025-05-04 16:27:33,421 openai_service Adding S3 file to vector store - bucket: zignalse, key: silo/datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf
+INFO 2025-05-04 16:27:33,582 openai_service Found existing S3 object with key: silo/datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf
+INFO 2025-05-04 16:27:33,582 openai_service Using S3 key: silo/datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf (original: silo/datasilo/company/jonas-company/85ad3594-0714-4e14-8cb5-59a3eed9068c.pdf)
+INFO 2025-05-04 16:27:33,583 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpu_j0lk81
+INFO 2025-05-04 16:27:33,643 openai_service Found existing S3 object with key: silo/datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf
+INFO 2025-05-04 16:27:33,643 openai_service Using S3 key: silo/datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf (original: silo/datasilo/company/jonas-company/01db397a-a9b6-447c-b7f5-3d33dcddbcfe.pdf)
+INFO 2025-05-04 16:27:33,644 openai_service Downloading from S3 to temp file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpc9ui15s3
+INFO 2025-05-04 16:27:34,674 openai_service Uploaded file Bowter_offert_69 to OpenAI with ID: file-VGPZgweBqi2VHNFcygAZmg
+INFO 2025-05-04 16:27:34,869 openai_service Uploaded file Bowter_offert_69 to OpenAI with ID: file-Fd5XaY8N1MCsn6VmttkNvJ
+ERROR 2025-05-04 16:27:35,505 openai_service Error adding file to vector store: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search/supported-files', 'type': 'invalid_request_error', 'param': 'file_ids', 'code': 'unsupported_file'}}
+ERROR 2025-05-04 16:27:35,807 openai_service Error adding file to vector store: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search/supported-files', 'type': 'invalid_request_error', 'param': 'file_ids', 'code': 'unsupported_file'}}
+ERROR 2025-05-04 16:27:36,442 openai_service Error creating thread with file attachment: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search#supported-files', 'type': 'invalid_request_error', 'param': None, 'code': 'unsupported_file'}}
+INFO 2025-05-04 16:27:36,442 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpu_j0lk81
+ERROR 2025-05-04 16:27:36,445 tasks Error adding file to vector store: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search#supported-files', 'type': 'invalid_request_error', 'param': None, 'code': 'unsupported_file'}}
+ERROR 2025-05-04 16:27:37,029 openai_service Error creating thread with file attachment: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search#supported-files', 'type': 'invalid_request_error', 'param': None, 'code': 'unsupported_file'}}
+INFO 2025-05-04 16:27:37,030 openai_service Deleted temporary file: /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpc9ui15s3
+ERROR 2025-05-04 16:27:37,037 tasks Error adding file to vector store: Error code: 400 - {'error': {'message': 'Files with extensions [none] are not supported for retrieval. See https://platform.openai.com/docs/assistants/tools/file-search#supported-files', 'type': 'invalid_request_error', 'param': None, 'code': 'unsupported_file'}}

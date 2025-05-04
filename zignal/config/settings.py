@@ -235,9 +235,14 @@ class MediaStorage(S3Boto3Storage):
         if name.startswith('/'):
             name = name[1:]
             
-        # Ensure media/ prefix if AWS_LOCATION is 'media'
-        if AWS_LOCATION == 'media' and not name.startswith('media/'):
-            name = f'media/{name}'
+        # Add media/ prefix only if:
+        # 1. AWS_LOCATION is not 'media' (to prevent double media/ prefix)
+        # 2. The name doesn't already have a media/ prefix
+        if not name.startswith('media/'):
+            # Only add media/ prefix if AWS_LOCATION is not already 'media'
+            # This prevents the double media/media/ issue
+            if AWS_LOCATION != 'media':
+                name = f'media/{name}'
             
         return super()._normalize_name(name)
 
@@ -417,3 +422,14 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
+
+# Force S3 storage configuration - imported at the end to ensure it runs after Django has initialized
+try:
+    from zignal.fix_s3_settings import ensure_s3_storage
+    
+    # Call the function to ensure S3 storage is forced even if Django initialization order changes
+    if django.apps.apps.ready:
+        ensure_s3_storage()
+        
+except ImportError:
+    print("WARNING: fix_s3_settings.py not found - S3 storage may not be properly configured")
