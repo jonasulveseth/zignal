@@ -401,17 +401,54 @@ def file_detail(request, file_id):
 def file_delete(request, file_id):
     """Delete a file from a data silo"""
     data_file = get_object_or_404(DataFile, id=file_id)
+    data_silo = data_file.data_silo
     
     # Check permissions
     if not has_file_permission(request.user, data_file, require_admin=True):
         raise PermissionDenied("You don't have permission to delete this file.")
     
     if request.method == 'POST':
-        data_silo = data_file.data_silo
         data_file.delete()
         messages.success(request, "File deleted successfully.")
         return redirect('datasilo:silo_detail', slug=data_silo.slug)
     
     return render(request, 'datasilo/file_delete.html', {
-        'file': data_file
+        'data_file': data_file,
+        'data_silo': data_silo
+    })
+
+
+@login_required
+def company_data_silos(request, company_id):
+    """View all data silos for a specific company"""
+    from companies.models import Company
+    
+    # Get the company
+    company = get_object_or_404(Company, id=company_id)
+    
+    # Check permissions - user must belong to the company
+    user = request.user
+    user_companies = user.company_relations.values_list('company', flat=True)
+    
+    if company.id not in user_companies and not hasattr(user, 'profile') or not hasattr(user.profile, 'company') or user.profile.company != company:
+        raise PermissionDenied("You don't have permission to view this company's data silos.")
+    
+    # Get all data silos for the company
+    data_silos = DataSilo.objects.filter(company=company)
+    
+    # Handle search
+    search_query = request.GET.get('search', '')
+    if search_query:
+        data_silos = data_silos.filter(name__icontains=search_query)
+    
+    # Handle sorting
+    sort_param = request.GET.get('sort', '-created_at')
+    if sort_param in ['name', '-name', 'created_at', '-created_at', 'updated_at', '-updated_at']:
+        data_silos = data_silos.order_by(sort_param)
+    else:
+        data_silos = data_silos.order_by('-created_at')
+    
+    return render(request, 'datasilo/company_silos.html', {
+        'company': company,
+        'data_silos': data_silos
     })

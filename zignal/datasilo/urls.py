@@ -12,4 +12,5 @@ urlpatterns = [
     path('silos/<slug:slug>/delete/', views.data_silo_delete, name='silo_delete'),
     path('files/<int:file_id>/', views.file_detail, name='file_detail'),
     path('files/<int:file_id>/delete/', views.file_delete, name='file_delete'),
+    path('company/<int:company_id>/silos/', views.company_data_silos, name='company_silo'),
 ] 
