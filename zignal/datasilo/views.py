@@ -428,10 +428,27 @@ def company_data_silos(request, company_id):
     
     # Check permissions - user must belong to the company
     user = request.user
-    user_companies = user.company_relations.values_list('company', flat=True)
     
-    if company.id not in user_companies and not hasattr(user, 'profile') or not hasattr(user.profile, 'company') or user.profile.company != company:
-        raise PermissionDenied("You don't have permission to view this company's data silos.")
+    # More permissive permission check:
+    # 1. Check if user is admin/staff
+    if user.is_staff or user.is_superuser:
+        # Admins can see all company silos
+        pass
+    else:
+        # Get companies user has access to through UserCompanyRelation
+        user_companies = list(user.company_relations.values_list('company', flat=True))
+        
+        # Check if user has profile with company
+        has_company_profile = False
+        if hasattr(user, 'profile') and hasattr(user.profile, 'company') and user.profile.company:
+            has_company_profile = user.profile.company.id == company.id
+            # Also add to user_companies for unified checking
+            if has_company_profile:
+                user_companies.append(company.id)
+        
+        # If user isn't associated with this company, deny access
+        if company.id not in user_companies:
+            raise PermissionDenied("You don't have permission to view this company's data silos.")
     
     # Get all data silos for the company
     data_silos = DataSilo.objects.filter(company=company)
