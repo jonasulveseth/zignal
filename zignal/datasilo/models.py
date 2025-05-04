@@ -35,6 +35,10 @@ def file_upload_path(instance, filename):
         # Fallback for when neither company nor project is available
         base_path = f"datasilo/files/{unique_id}.{ext}"
     
+    # IMPORTANT: The issue with double uploads might be related to path inconsistencies
+    # DO NOT prepend 'media/' here as it will cause issues with S3 storage
+    # The S3 storage backend adds 'media/' in some contexts but not others
+    
     print(f"Generated file path: {base_path} for file: {filename}")
     return base_path
 
@@ -160,6 +164,10 @@ class DataFile(models.Model):
                                              ('skipped', 'Skipped (Unsupported Format)')
                                          ])
     vector_store_processed_at = models.DateTimeField(null=True, blank=True)
+    
+    # S3 storage specific field
+    original_file_path = models.CharField(max_length=512, blank=True, null=True,
+                                        help_text="Original S3 file path that was validated to exist")
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
