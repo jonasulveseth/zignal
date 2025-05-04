@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 def test_datasilo_file_upload():
     """Test uploading a file through the DataFile model"""
-    from datasilo.models import DataSilo, DataFile
-    from companies.models import Company
+    from zignal.datasilo.models import DataSilo, DataFile
+    from zignal.companies.models import Company
     from django.contrib.auth import get_user_model
     
     User = get_user_model()
