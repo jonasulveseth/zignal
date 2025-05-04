@@ -318,9 +318,57 @@ def process_file_for_vector_store(self, file_id):
                 s3_storage = settings.MEDIA_STORAGE_CLASS()
                 
                 # Get the file path (which is already the key)
-                s3_key = data_file.file.name
-                if aws_location and not s3_key.startswith(f"{aws_location}/"):
-                    s3_key = f"{aws_location}/{s3_key}"
+                original_key = data_file.file.name
+                logger.info(f"Original S3 key from file: {original_key}")
+                
+                # List of possible S3 key formats to try
+                possible_keys = []
+                
+                # Original key
+                possible_keys.append(original_key)
+                
+                # With media/ prefix if not already there
+                if not original_key.startswith('media/'):
+                    possible_keys.append(f"media/{original_key}")
+                
+                # Without media/ prefix if it's there
+                if original_key.startswith('media/'):
+                    possible_keys.append(original_key[6:])  # Remove 'media/'
+                
+                # Try with AWS_LOCATION
+                if aws_location and not original_key.startswith(f"{aws_location}/"):
+                    possible_keys.append(f"{aws_location}/{original_key}")
+                    
+                    # Also try with the location but without media/ if it has that
+                    if original_key.startswith('media/'):
+                        possible_keys.append(f"{aws_location}/{original_key[6:]}")
+                
+                logger.info(f"Will try these S3 keys for direct access: {possible_keys}")
+                
+                # First check which key exists
+                found_key = None
+                for key in possible_keys:
+                    try:
+                        if s3_storage.exists(key):
+                            found_key = key
+                            logger.info(f"Found existing S3 object with key: {key}")
+                            break
+                    except Exception as e:
+                        logger.warning(f"Error checking if key exists: {key} - {str(e)}")
+                
+                if found_key:
+                    s3_key = found_key
+                else:
+                    # If no key was found to exist, use the first one with aws_location prefix if specified
+                    for key in possible_keys:
+                        if aws_location and key.startswith(f"{aws_location}/"):
+                            s3_key = key
+                            logger.info(f"Using key with AWS_LOCATION prefix: {s3_key}")
+                            break
+                    else:
+                        # Default to original key if no better option found
+                        s3_key = original_key
+                        logger.info(f"No existing key found, using original: {s3_key}")
                 
                 s3_bucket = aws_bucket
                 
@@ -363,21 +411,76 @@ def process_file_for_vector_store(self, file_id):
                     
                     # Determine the correct S3 key path
                     file_key = data_file.file.name
-                    if aws_location and not file_key.startswith(f"{aws_location}/"):
-                        file_key = f"{aws_location}/{file_key}"
                     
-                    logger.info(f"Downloading file from S3: bucket={aws_bucket}, key={file_key}")
-                    try:
-                        s3_client.download_file(aws_bucket, file_key, temp_file.name)
-                    except Exception as e:
-                        # Try alternative path if first attempt failed
+                    # List of possible S3 key formats to try
+                    possible_keys = []
+                    
+                    # Start with the original key from the file
+                    possible_keys.append(file_key)
+                    
+                    # Try with media/ prefix if not already there
+                    if not file_key.startswith('media/'):
+                        possible_keys.append(f"media/{file_key}")
+                    
+                    # Try without media/ prefix if it's there
+                    if file_key.startswith('media/'):
+                        possible_keys.append(file_key[6:])  # Remove 'media/'
+                    
+                    # If AWS_LOCATION is set, try with that prefix
+                    if aws_location and not file_key.startswith(f"{aws_location}/"):
+                        possible_keys.append(f"{aws_location}/{file_key}")
+                        
+                        # Also try with the location but without media/ if it starts with that
+                        if file_key.startswith('media/'):
+                            possible_keys.append(f"{aws_location}/{file_key[6:]}")
+                    
+                    # Log all paths we're going to try
+                    logger.info(f"Will try these S3 paths: {possible_keys}")
+                    
+                    # Try each possible key until one works
+                    download_success = False
+                    last_error = None
+                    
+                    for key in possible_keys:
                         try:
-                            alt_key = data_file.file.name
-                            logger.info(f"First attempt failed, trying alternative path: {alt_key}")
-                            s3_client.download_file(aws_bucket, alt_key, temp_file.name)
-                        except Exception as e2:
-                            logger.error(f"Both download attempts failed: {str(e2)}")
-                            raise e
+                            logger.info(f"Attempting to download with key: {key}")
+                            s3_client.download_file(aws_bucket, key, temp_file.name)
+                            logger.info(f"Successfully downloaded using key: {key}")
+                            download_success = True
+                            break
+                        except Exception as e:
+                            logger.warning(f"Failed to download with key {key}: {str(e)}")
+                            last_error = e
+                    
+                    # If all attempts failed, raise the last error
+                    if not download_success:
+                        logger.error(f"All download attempts failed. Last error: {str(last_error)}")
+                        
+                        # Try listing the objects in the bucket to debug
+                        try:
+                            # Check if there's anything in the bucket with a similar path
+                            prefix = file_key.split('/')
+                            if len(prefix) > 1:
+                                search_prefix = '/'.join(prefix[:-1]) + '/'
+                            else:
+                                search_prefix = ''
+                                
+                            logger.info(f"Listing objects with prefix: {search_prefix}")
+                            response = s3_client.list_objects_v2(
+                                Bucket=aws_bucket,
+                                Prefix=search_prefix,
+                                MaxKeys=10
+                            )
+                            
+                            if response.get('KeyCount', 0) > 0:
+                                keys = [obj['Key'] for obj in response.get('Contents', [])]
+                                logger.info(f"Found {len(keys)} objects with similar prefix: {keys}")
+                            else:
+                                logger.warning(f"No objects found with prefix: {search_prefix}")
+                        except Exception as list_err:
+                            logger.error(f"Error listing objects: {str(list_err)}")
+                        
+                        raise last_error
                 else:
                     # For local storage, just open and read the file
                     with default_storage.open(data_file.file.name, 'rb') as f:

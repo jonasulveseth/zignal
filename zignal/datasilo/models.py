@@ -6,7 +6,8 @@ from projects.models import Project
 
 def file_upload_path(instance, filename):
     """Generate a unique file path for uploaded files"""
-    ext = filename.split('.')[-1]
+    # Skip file extension as we'll use a completely unique filename
+    ext = filename.split('.')[-1].lower()
     unique_id = str(uuid.uuid4())
     
     # Handle the case where company or project might not be set yet
