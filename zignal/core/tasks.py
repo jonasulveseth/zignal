@@ -412,11 +412,19 @@ def process_file_for_vector_store(file_id, max_retries=3):
                         # Start with the original key from the file
                         possible_keys.append(file_key)
                         
-                        # Try with media/ prefix if not already there
-                        if not file_key.startswith('media/'):
-                            possible_keys.append(f"media/{file_key}")
+                        # Check for double datasilo prefix case
+                        if 'datasilo/datasilo/' in file_key:
+                            # Add a version without the doubled prefix
+                            fixed_key = file_key.replace('datasilo/datasilo/', 'datasilo/')
+                            possible_keys.append(fixed_key)
+                            logger.info(f"Detected duplicate datasilo prefix, adding alternative path: {fixed_key}")
+                        elif 'datasilo/' in file_key and not file_key.startswith('datasilo/datasilo/'):
+                            # Try with doubled prefix if we have a single one
+                            doubled_key = file_key.replace('datasilo/', 'datasilo/datasilo/')
+                            possible_keys.append(doubled_key)
+                            logger.info(f"Adding path with doubled datasilo prefix: {doubled_key}")
                         
-                        # Try without media/ prefix if it's there
+                        # Add common variations
                         if file_key.startswith('media/'):
                             possible_keys.append(file_key[6:])  # Remove 'media/'
                         

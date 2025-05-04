@@ -234,15 +234,39 @@ class MediaStorage(S3Boto3Storage):
         """
         if name.startswith('/'):
             name = name[1:]
-            
-        # Add media/ prefix only if:
-        # 1. AWS_LOCATION is not 'media' (to prevent double media/ prefix)
-        # 2. The name doesn't already have a media/ prefix
-        if not name.startswith('media/'):
-            # Only add media/ prefix if AWS_LOCATION is not already 'media'
-            # This prevents the double media/media/ issue
-            if AWS_LOCATION != 'media':
-                name = f'media/{name}'
+        
+        # Prevent double datasilo prefix issue
+        if AWS_LOCATION == 'datasilo' and 'datasilo/datasilo/' in name:
+            # Remove one of the duplicated prefixes
+            name = name.replace('datasilo/datasilo/', 'datasilo/')
+            print(f"Removed duplicate datasilo prefix, new path: {name}")
+        
+        # Check if AWS_LOCATION is set and not empty
+        if AWS_LOCATION:
+            # If the name already starts with the location prefix, don't add it again
+            if name.startswith(f"{AWS_LOCATION}/"):
+                print(f"Path already has location prefix '{AWS_LOCATION}/', keeping as is: {name}")
+                # Keep the name as is, it already has the location prefix
+                pass
+            # If it doesn't have the location prefix, add it
+            else:
+                # Remove any 'media/' prefix if AWS_LOCATION is not 'media'
+                if name.startswith('media/') and AWS_LOCATION != 'media':
+                    name = name[6:]  # Remove 'media/'
+                
+                # Only add the location prefix if name doesn't already have it
+                name = f"{AWS_LOCATION}/{name}"
+                print(f"Adding location prefix '{AWS_LOCATION}/' to path: {name}")
+                
+        # If no AWS_LOCATION, but we want to use media prefix
+        elif not name.startswith('media/'):
+            name = f"media/{name}"
+            print(f"No AWS_LOCATION, adding 'media/' prefix: {name}")
+        
+        # Final check for double datasilo problem (may have been introduced above)
+        if 'datasilo/datasilo/' in name:
+            name = name.replace('datasilo/datasilo/', 'datasilo/')
+            print(f"Fixed double datasilo prefix in final check, new path: {name}")
             
         return super()._normalize_name(name)
 
