@@ -41,18 +41,14 @@ def list_s3_contents():
         # Log summary
         logger.info(f"Found {len(all_objects)} objects in bucket {aws_bucket}")
         
-        # Check datasilo folder
-        datasilo_objects = [obj for obj in all_objects if 'datasilo/' in obj['Key']]
-        logger.info(f"Found {len(datasilo_objects)} objects in datasilo folder")
+        # Show all files
+        logger.info("All files in bucket:")
+        for i, obj in enumerate(all_objects):
+            logger.info(f"  {i+1}. {obj['Key']} ({obj['Size']} bytes)")
         
-        # Display some datasilo files
-        if datasilo_objects:
-            logger.info("Sample datasilo files:")
-            for i, obj in enumerate(datasilo_objects[:10]):  # Show first 10
-                logger.info(f"  {i+1}. {obj['Key']} ({obj['Size']} bytes)")
-            
-            if len(datasilo_objects) > 10:
-                logger.info(f"  ... and {len(datasilo_objects) - 10} more files")
+        # Check for media/datasilo paths
+        media_datasilo_objects = [obj for obj in all_objects if 'media/datasilo/' in obj['Key']]
+        logger.info(f"Found {len(media_datasilo_objects)} objects in media/datasilo folder")
         
         return all_objects
     
