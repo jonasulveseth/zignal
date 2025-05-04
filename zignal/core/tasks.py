@@ -333,65 +333,150 @@ def process_file_for_vector_store(self, file_id):
                 file_path = data_file.file.path
                 logger.info(f"Using local file path: {file_path}")
             else:
-                # File must be in cloud storage, download to temp file
-                logger.info(f"File not available locally, downloading from storage: {data_file.file.name}")
+                # File must be in cloud storage, try to download it directly using S3 client
+                # We know we have GetObject permission but might not have ListBucket
+                logger.info(f"File not available locally, trying direct S3 download: {data_file.file.name}")
                 
-                # Check if the file exists in storage
-                if not default_storage.exists(data_file.file.name):
-                    logger.error(f"File not found in storage: {data_file.file.name}")
-                    
-                    # If using S3, check both with and without AWS_LOCATION prefix
-                    if using_s3 and settings.AWS_LOCATION:
-                        alt_path = f"{settings.AWS_LOCATION}/{data_file.file.name}"
-                        if default_storage.exists(alt_path):
-                            logger.info(f"File found with location prefix: {alt_path}")
-                            data_file.file.name = alt_path
-                        else:
-                            logger.error(f"File not found with location prefix either: {alt_path}")
-                            DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
-                            return {
-                                "success": False,
-                                "error": "File not found in storage"
-                            }
+                # Create S3 client if using S3 storage
+                import boto3
+                from botocore.exceptions import ClientError
+                
+                s3 = None
+                if using_s3:
+                    try:
+                        s3 = boto3.client(
+                            's3',
+                            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                            region_name=settings.AWS_S3_REGION_NAME
+                        )
+                    except Exception as e:
+                        logger.error(f"Error creating S3 client: {str(e)}")
+                
+                # Try multiple path combinations if using S3
+                paths_to_try = [data_file.file.name]
+                
+                # Add paths with and without location prefix
+                if using_s3 and settings.AWS_LOCATION:
+                    if not data_file.file.name.startswith(f"{settings.AWS_LOCATION}/"):
+                        paths_to_try.append(f"{settings.AWS_LOCATION}/{data_file.file.name}")
                     else:
-                        DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
-                        return {
-                            "success": False,
-                            "error": "File not found in storage"
-                        }
-                
-                # Get file size from storage for checking
-                file_size = default_storage.size(data_file.file.name)
-                logger.info(f"File size in storage: {file_size} bytes")
+                        # Also try without location prefix
+                        paths_to_try.append(data_file.file.name.replace(f"{settings.AWS_LOCATION}/", ""))
                 
                 # Create temp file with the same extension
                 file_ext = os.path.splitext(data_file.file.name)[1]
                 temp_file = tempfile.NamedTemporaryFile(suffix=file_ext, delete=False)
                 temp_file.close()  # Close immediately so we can write to it
                 
-                # Download file from storage to temp location
-                with default_storage.open(data_file.file.name, 'rb') as source_file:
-                    with open(temp_file.name, 'wb') as dest_file:
-                        # Copy in chunks to avoid memory issues
-                        chunk_size = 1024 * 1024  # 1MB chunks
-                        content = source_file.read(chunk_size)
-                        while content:
-                            dest_file.write(content)
-                            content = source_file.read(chunk_size)
+                file_downloaded = False
                 
-                # Verify file size matches
-                downloaded_size = os.path.getsize(temp_file.name)
-                if downloaded_size != file_size:
-                    logger.error(f"File size mismatch: expected {file_size}, got {downloaded_size}")
-                    os.unlink(temp_file.name)
+                # Try Django default_storage first
+                for path in paths_to_try:
+                    if not file_downloaded:
+                        try:
+                            if default_storage.exists(path):
+                                logger.info(f"File found in storage at path: {path}")
+                                
+                                # Get file size from storage for checking
+                                file_size = default_storage.size(path)
+                                logger.info(f"File size in storage: {file_size} bytes")
+                                
+                                # Download file from storage to temp location
+                                with default_storage.open(path, 'rb') as source_file:
+                                    with open(temp_file.name, 'wb') as dest_file:
+                                        # Copy in chunks to avoid memory issues
+                                        chunk_size = 1024 * 1024  # 1MB chunks
+                                        content = source_file.read(chunk_size)
+                                        while content:
+                                            dest_file.write(content)
+                                            content = source_file.read(chunk_size)
+                                
+                                # Verify file size matches
+                                downloaded_size = os.path.getsize(temp_file.name)
+                                if downloaded_size == file_size:
+                                    file_downloaded = True
+                                    file_path = temp_file.name
+                                    logger.info(f"Successfully downloaded file using default_storage to {file_path}")
+                                else:
+                                    logger.error(f"File size mismatch: expected {file_size}, got {downloaded_size}")
+                        except Exception as e:
+                            logger.error(f"Error downloading via default_storage for path {path}: {str(e)}")
+                
+                # If not downloaded and S3 client is available, try direct S3 download
+                if not file_downloaded and s3 is not None:
+                    for path in paths_to_try:
+                        if not file_downloaded:
+                            try:
+                                logger.info(f"Attempting direct S3 download from bucket={settings.AWS_STORAGE_BUCKET_NAME}, key={path}")
+                                s3.download_file(
+                                    Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                                    Key=path,
+                                    Filename=temp_file.name
+                                )
+                                
+                                # Check if file was downloaded successfully
+                                if os.path.exists(temp_file.name) and os.path.getsize(temp_file.name) > 0:
+                                    file_downloaded = True
+                                    file_path = temp_file.name
+                                    logger.info(f"Successfully downloaded file directly from S3 to {file_path}")
+                            except ClientError as e:
+                                logger.error(f"Error downloading directly from S3 for path {path}: {e.response['Error']['Message']}")
+                            except Exception as e:
+                                logger.error(f"Unexpected error downloading from S3 for path {path}: {str(e)}")
+                
+                if not file_downloaded:
+                    # If all direct attempts failed, try URL retrieval as a last resort
+                    try:
+                        import requests
+                        file_url = None
+                        
+                        # Try to generate a URL for the file
+                        try:
+                            file_url = data_file.file.url
+                            logger.info(f"Generated file URL from model: {file_url}")
+                        except Exception:
+                            # If that fails, try to construct S3 URL manually
+                            if using_s3:
+                                for path in paths_to_try:
+                                    if not file_url:
+                                        s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{path}"
+                                        logger.info(f"Using constructed S3 URL: {s3_url}")
+                                        file_url = s3_url
+                        
+                        if file_url:
+                            # Try to download using requests
+                            logger.info(f"Attempting to download file via HTTP from: {file_url}")
+                            response = requests.get(file_url, stream=True)
+                            
+                            if response.status_code == 200:
+                                with open(temp_file.name, 'wb') as f:
+                                    for chunk in response.iter_content(chunk_size=8192):
+                                        f.write(chunk)
+                                
+                                downloaded_size = os.path.getsize(temp_file.name)
+                                if downloaded_size > 0:
+                                    file_downloaded = True
+                                    file_path = temp_file.name
+                                    logger.info(f"Successfully downloaded file via HTTP to {file_path} ({downloaded_size} bytes)")
+                            else:
+                                logger.error(f"HTTP download failed with status code: {response.status_code}")
+                    except Exception as e:
+                        logger.error(f"Error attempting HTTP download: {str(e)}")
+                
+                # If we still couldn't download the file, fail with error
+                if not file_downloaded or not file_path:
+                    logger.error(f"File not found in storage or download failed: {data_file.file.name}")
                     DataFile.objects.filter(id=file_id).update(vector_store_status='failed')
+                    
+                    # Clean up temp file if it exists
+                    if temp_file and os.path.exists(temp_file.name):
+                        os.unlink(temp_file.name)
+                        
                     return {
                         "success": False,
-                        "error": "File download incomplete"
+                        "error": "File not found in storage or download failed"
                     }
-                
-                file_path = temp_file.name
-                logger.info(f"Downloaded file to temporary location: {file_path}")
         except Exception as e:
             logger.error(f"Error accessing file: {str(e)}")
             if temp_file and os.path.exists(temp_file.name):
