@@ -658,6 +658,25 @@ def process_file_for_vector_store_core(file_path=None, data_file=None, metadata=
         # Create an instance of the OpenAI service
         openai_service = CompanyOpenAIService()
         
+        # Before trying anything, let's check the exact URL from the data_file for debugging
+        file_url = data_file.file.url
+        logger.info(f"Debug - File URL from model: {file_url}")
+        
+        # Extract potential S3 path from URL to check if there's a datasilo/datasilo issue
+        import re
+        s3_path_match = re.search(r'amazonaws\.com/([^?]+)', file_url)
+        if s3_path_match:
+            potential_s3_path = s3_path_match.group(1)
+            logger.info(f"Debug - Extracted potential S3 path from URL: {potential_s3_path}")
+            
+            # If we're using S3 and we've detected double datasilo but not using it in our lookup
+            if s3_bucket and s3_key and 'datasilo/datasilo/' in potential_s3_path and 'datasilo/datasilo/' not in s3_key:
+                # Adjust the key to match the actual path with double prefix
+                original_key = s3_key
+                if 'datasilo/' in s3_key:
+                    s3_key = s3_key.replace('datasilo/', 'datasilo/datasilo/')
+                    logger.info(f"Debug - Adjusted S3 key to use double datasilo prefix: {s3_key} (was: {original_key})")
+        
         # Upload file to vector store - which method depends on what we have
         if file_path:
             # Use local file path

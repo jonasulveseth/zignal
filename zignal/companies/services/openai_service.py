@@ -282,6 +282,20 @@ class CompanyOpenAIService:
             # Try different path variations to make sure we find the file
             keys_to_try = [s3_key]
             
+            # Add check for double datasilo prefix
+            if 'datasilo/' in s3_key:
+                # Check for double datasilo prefix
+                if 'datasilo/datasilo/' in s3_key:
+                    # Already has double prefix, add a version without it
+                    fixed_key = s3_key.replace('datasilo/datasilo/', 'datasilo/')
+                    keys_to_try.append(fixed_key)
+                    logger.info(f"Added path with fixed datasilo prefix: {fixed_key}")
+                else:
+                    # Has single prefix, try with double prefix
+                    doubled_key = s3_key.replace('datasilo/', 'datasilo/datasilo/')
+                    keys_to_try.append(doubled_key)
+                    logger.info(f"Added path with doubled datasilo prefix: {doubled_key}")
+            
             # If the key doesn't start with media/, try with it
             if not s3_key.startswith('media/'):
                 keys_to_try.append(f"media/{s3_key}")
@@ -293,6 +307,14 @@ class CompanyOpenAIService:
             # Also try media/media/ prefix (double media)
             if not s3_key.startswith('media/media/') and not s3_key.startswith('media/'):
                 keys_to_try.append(f"media/media/{s3_key}")
+                
+            # Try datasilo prefix combinations with media
+            if 'datasilo/' in s3_key and not s3_key.startswith('media/'):
+                keys_to_try.append(f"media/datasilo/datasilo/{s3_key.split('datasilo/')[1]}")
+                keys_to_try.append(f"media/datasilo/{s3_key.split('datasilo/')[1]}")
+            
+            # Remove duplicates but preserve order
+            keys_to_try = list(dict.fromkeys(keys_to_try))
             
             # Try to find the correct key in S3
             working_key = None
