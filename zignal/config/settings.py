@@ -90,7 +90,6 @@ INSTALLED_APPS = [
     'invitations',
     'profiles',
     'mail_receiver',
-    'notifications',
     'core',
 ]
 
@@ -156,10 +155,6 @@ CACHES = {
         'LOCATION': 'unique-snowflake',
     }
 }
-
-# Notification settings
-NOTIFICATION_SOUND_ENABLED = os.getenv('NOTIFICATION_SOUND_ENABLED', 'True') == 'True'
-NOTIFICATION_VIBRATION_ENABLED = os.getenv('NOTIFICATION_VIBRATION_ENABLED', 'True') == 'True'
 
 # Email domain for mail receiver
 EMAIL_DOMAIN = os.getenv('EMAIL_DOMAIN', 'zignal.se')

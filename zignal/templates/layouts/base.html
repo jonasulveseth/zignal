@@ -12,9 +12,6 @@
     />
     <link href="{% static 'css/main.css' %}" rel="stylesheet" />
     <link href="{% static 'css/auth.css' %}" rel="stylesheet" />
-    {% if user.is_authenticated %}
-    <link href="{% static 'css/notifications.css' %}" rel="stylesheet" />
-    {% endif %}
     <style>
       .glass-card {
         background-color: rgba(255, 255, 255, 0.7);
@@ -70,10 +67,6 @@
       {% block content %}{% endblock %}
     </div>
     {% include 'layouts/footer.html' %}
-    
-    {% if user.is_authenticated %}
-    <script src="{% static 'js/notifications.js' %}?v=4"></script>
-    {% endif %}
     
     {% block javascript %}{% endblock %}
     {% block extra_js %}{% endblock %}

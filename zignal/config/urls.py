@@ -74,9 +74,6 @@ urlpatterns = [
     
     # Mail Receiver webhook URLs
     path('mail/', include('mail_receiver.urls')),
-    
-    # Notification API endpoints
-    path('', include('notifications.urls')),
 ]
 
 # Serve media files in development
