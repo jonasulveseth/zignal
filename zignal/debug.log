@@ -2654,3 +2654,23 @@ INFO 2025-05-04 18:11:55,669 openai_service Uploaded file Bowter_offert_66 to Op
 INFO 2025-05-04 18:11:56,792 openai_service Added file to vector store batch: vsfb_4b1e6b24d18c4da3a16efc06e2e2d8ba
 INFO 2025-05-04 18:11:56,796 tasks File 28 added to vector store with ID: file-GiDCTzqCbBL7dzrRtnTLgb
 INFO 2025-05-04 18:11:56,851 tasks Temporary file deleted
+INFO 2025-05-09 08:17:51,604 openai_service Setting up OpenAI resources for company: funka (ID: 26)
+INFO 2025-05-09 08:17:52,371 openai_service Created vector store for company funka: vs_681dba3049b081918f022b1b9862a09e
+INFO 2025-05-09 08:17:53,387 openai_service Created assistant for company funka: asst_V4KeNFwflCsaXyPQr0on1Cyk
+INFO 2025-05-09 08:17:53,387 openai_service Successfully created OpenAI resources for company: funka
+INFO 2025-05-09 08:17:53,392 tasks Creating default project and silo for company ID: 26
+INFO 2025-05-09 08:17:53,401 tasks Created default project: Default Project - funka 1746778673 (ID: 8)
+INFO 2025-05-09 08:17:53,406 tasks Created default data silo: General Documents - 1746778673 (ID: 9)
+INFO 2025-05-09 08:17:53,408 tasks Created company-level data silo: Company Documents - funka 1746778673 (ID: 10)
+INFO 2025-05-09 09:38:28,153 tasks Processing file for vector store: 30 (Attempt 1)
+INFO 2025-05-09 09:38:28,159 tasks File name: Bowter_offert_69, Storage path: datasilo/company/funka/8684187d-4697-4dfb-90c4-fd4fe5fa44c2.pdf
+INFO 2025-05-09 09:38:28,177 tasks Using S3 storage: False (Storage class: FileSystemStorage)
+INFO 2025-05-09 09:38:28,177 tasks AWS settings: bucket=zignalse, region=eu-west-1, location=media
+INFO 2025-05-09 09:38:28,178 tasks File downloaded successfully to /var/folders/9q/9525tkmn6cn0c9zhb4qqvs0h0000gn/T/tmpcrgtmsvh.pdf (41514 bytes)
+INFO 2025-05-09 09:38:28,178 tasks Core processing function for file: 30, S3: False
+INFO 2025-05-09 09:38:28,219 tasks Debug - File URL from model: https://.s3.eu-west-1.amazonaws.com/media/datasilo/company/funka/8684187d-4697-4dfb-90c4-fd4fe5fa44c2.pdf
+INFO 2025-05-09 09:38:28,219 tasks Debug - Extracted potential S3 path from URL: media/datasilo/company/funka/8684187d-4697-4dfb-90c4-fd4fe5fa44c2.pdf
+INFO 2025-05-09 09:38:29,154 openai_service Uploaded file Bowter_offert_69 to OpenAI with ID: file-KgGdkEiWHH4owr4epH4c6A
+INFO 2025-05-09 09:38:30,437 openai_service Added file to vector store batch: vsfb_f5a68eb7b30c4aa995213d45769f0fc7
+INFO 2025-05-09 09:38:30,440 tasks File 30 added to vector store with ID: file-KgGdkEiWHH4owr4epH4c6A
+INFO 2025-05-09 09:38:30,491 tasks Temporary file deleted

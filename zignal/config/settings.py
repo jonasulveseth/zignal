@@ -92,6 +92,7 @@ INSTALLED_APPS = [
     'mail_receiver',
     'core',
     'zigcontact',
+    'chat',  # Chat app for OpenAI Assistant integration
 ]
 
 MIDDLEWARE = [

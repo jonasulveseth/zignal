@@ -3,6 +3,13 @@
 # File: zignal/start.sh
 # Purpose: Clean startup script for Zignal Django application
 
+# Activate virtual environment
+echo "Activating virtual environment..."
+source venv/bin/activate
+
+# Change to the zignal directory
+cd "$(dirname "$0")"
+
 # Kill any running Django servers to prevent port conflicts
 echo "Stopping any existing Django servers..."
 pkill -f "python.*runserver" || echo "No servers running"

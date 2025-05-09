@@ -29,7 +29,6 @@ sys.path.insert(0, os.path.join(settings.BASE_DIR.parent, ''))
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
-    path('chat/', views.chat, name='chat'),
     
     # Portfolio Manager Global Chat
     path('portfolio-chat/', views.portfolio_manager_chat, name='portfolio_manager_chat'),
@@ -77,6 +76,9 @@ urlpatterns = [
     
     # Contact form URLs
     path('', include('zigcontact.urls')),
+    
+    # Chat URLs
+    path('chat/', include('chat.urls')),
 ]
 
 # Serve media files in development

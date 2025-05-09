@@ -1,0 +1,183 @@
+{% extends "layouts/base.html" %}
+{% block title %}Chat with AI{% endblock %}
+
+{% block content %}
+<section class="py-12">
+  <div class="max-w-4xl mx-auto px-4">
+    <h1 class="text-3xl font-bold mb-8">Chat with AI</h1>
+
+    {% csrf_token %}
+
+    {% if error %}
+    <div class="mb-6 p-4 bg-red-100 text-red-700 rounded-lg">
+      {{ error }}
+    </div>
+    {% else %}
+    <!-- Debug panel -->
+    <div id="debug-panel" class="mb-4 p-4 bg-gray-100 rounded-lg text-sm">
+      <p><strong>Thread Info:</strong></p>
+      <p>Thread ID: {% if thread and thread.id %}{{ thread.id }}{% else %}Not available{% endif %}</p>
+      <p>OpenAI Thread ID: {% if thread and thread.openai_thread_id %}{{ thread.openai_thread_id }}{% else %}Not available{% endif %}</p>
+    </div>
+    
+    <div id="chat-container" class="bg-white rounded-lg shadow-lg p-4 mb-4 min-h-[400px] max-h-[600px] overflow-y-auto">
+      <div id="messages" class="space-y-4"></div>
+    </div>
+
+    <div id="chat-input-container" class="flex items-center space-x-2">
+      <input
+        type="text"
+        id="message-input"
+        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        placeholder="Type your message here..."
+      />
+      <button
+        id="send-message"
+        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+      >
+        Send
+      </button>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    {% if error %}
+    return;
+    {% endif %}
+
+    // DOM elements
+    const debugPanel = document.getElementById("debug-panel");
+    const chatContainer = document.getElementById("chat-container");
+    const messages = document.getElementById("messages");
+    const messageInput = document.getElementById("message-input");
+    const sendMessageBtn = document.getElementById("send-message");
+
+    // Variables
+    const threadId = {% if thread and thread.id %}{{ thread.id }}{% else %}null{% endif %};
+    const openAIThreadId = {% if thread and thread.openai_thread_id %}"{{ thread.openai_thread_id }}"{% else %}null{% endif %};
+    const hasOpenAIThreadId = Boolean(openAIThreadId);
+    let eventSource = null;
+
+    // Helper function to get CSRF token
+    const getCsrfToken = () => {
+      return document.querySelector("[name=csrfmiddlewaretoken]").value;
+    };
+    
+    // Add a message to the chat
+    const addMessage = (role, content) => {
+      const messageEl = document.createElement("div");
+
+      if (role === "user") {
+        messageEl.className = "p-3 bg-blue-500 text-white rounded-lg max-w-[80%] ml-auto";
+      } else if (role === "assistant") {
+        messageEl.className = "p-3 bg-blue-100 rounded-lg max-w-[80%]";
+      } else {
+        messageEl.className = "p-2 text-sm text-gray-500 italic text-center";
+      }
+
+      messageEl.textContent = content;
+      messages.appendChild(messageEl);
+
+      // Scroll to bottom
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      return messageEl;
+    };
+
+    // Check if we have a valid thread with OpenAI thread ID
+    const threadDetails = { threadId, openAIThreadId, hasOpenAIThreadId };
+    console.log("Thread details:", threadDetails);
+    
+    if (!threadId) {
+      console.error("No Django thread ID available");
+      addMessage("system", "Error: No chat thread ID available. Please refresh the page.");
+      return;
+    }
+    
+    if (!hasOpenAIThreadId) {
+      console.error("Thread exists but no OpenAI thread ID is available");
+      addMessage("system", "Error: Chat thread is not properly connected to OpenAI. Please refresh the page or contact support.");
+      return;
+    }
+
+    // Load existing messages
+    const loadMessages = async () => {
+      try {
+        const response = await fetch(`/chat/api/threads/${threadId}/messages/`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log("Messages loaded:", data);
+        
+        if (data.messages && data.messages.length > 0) {
+          data.messages.forEach(msg => {
+            addMessage(msg.role, msg.content);
+          });
+        } else {
+          addMessage("system", "Start a new conversation by sending a message.");
+        }
+      } catch (error) {
+        console.error("Error loading messages:", error);
+        addMessage("system", `Error loading messages: ${error.message}. Please refresh the page.`);
+      }
+    };
+
+    // Send a message
+    const sendMessage = async () => {
+      const message = messageInput.value.trim();
+      if (!message) return;
+
+      // Add user message to chat
+      addMessage("user", message);
+      messageInput.value = "";
+
+      // Disable input while waiting for response
+      messageInput.disabled = true;
+      sendMessageBtn.disabled = true;
+
+      try {
+        console.log('Sending message to:', `/chat/api/threads/${threadId}/send/`);
+        const response = await fetch(`/chat/api/threads/${threadId}/send/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrfToken(),
+          },
+          body: JSON.stringify({ message }),
+        });
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        if (response.ok) {
+          addMessage("assistant", data.reply);
+        } else {
+          addMessage("system", data.error || "Error from assistant");
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+        addMessage("system", `Error sending message: ${error.message}`);
+      } finally {
+        messageInput.disabled = false;
+        sendMessageBtn.disabled = false;
+        messageInput.focus();
+      }
+    };
+
+    // Event listeners
+    sendMessageBtn.addEventListener("click", sendMessage);
+
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    // Initialize
+    loadMessages();
+  });
+</script>
+{% endblock %} 
