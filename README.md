@@ -37,3 +37,5 @@ python manage.py runserver
 ## Utveckling
 
 Detta projekt använder Python 3.13 och Django. Alla bidrag bör följa PEP 8-riktlinjerna. 
+
+Henrik suger på flipper :) 
