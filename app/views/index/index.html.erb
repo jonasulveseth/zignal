@@ -1,56 +1,6 @@
 <% content_for :title, "Zignal - Effortless AI tracking of all your investments" %>
-<% content_for :head do %>
-    <style>
-        .glass-card {
-            background-color: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .hover-scale {
-            transition: transform 0.3s ease;
-        }
-
-        .hover-scale:hover {
-            transform: scale(1.03);
-        }
-
-        .animate-fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-
-        .animate-float {
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-    </style>
-<% end %>
     <!-- Hero Section -->
-    <section class="relative lg:min-h-screen pt-2 sm:pt-16 md:pt-24 overflow-hidden">
+    <section class="relative lg:min-h-screen pt-2 md:pt-2 2xl:pt-24 overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-b from-purple-50/20 to-white/0 -z-10"></div>
 
         <!-- Decorative Elements -->
@@ -106,7 +56,7 @@
     </section>
 
     <!-- Features Section -->
-    <section id="features" class="py-24 relative">
+    <section id="features" class="py-2 2xl:py-24 relative">
         <div class="max-w-7xl mx-auto px-6 md:px-12">
             <div class="text-center mb-16">
                 <h2 class="text-3xl md:text-4xl font-bold mb-4">
@@ -119,7 +69,7 @@
 
             <div class="grid grid-cols-1 gap-8">
                 <!-- Feature 1 -->
-                <div class="glass-card p-8 rounded-2xl hover-scale">
+                <div class="bg-white/70 backdrop-blur border border-white/10 shadow-md p-8 rounded-2xl transition-transform duration-300 hover:scale-[1.03]">
                     <div class="flex flex-col gap-4">
                         <div class="h-14 w-14 rounded-xl bg-purple-100 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -138,7 +88,7 @@
                 </div>
 
                 <!-- Feature 2 -->
-                <div class="glass-card p-8 rounded-2xl hover-scale">
+                <div class="bg-white/70 backdrop-blur border border-white/10 shadow-md p-8 rounded-2xl transition-transform duration-300 hover:scale-[1.03]">
                     <div class="flex flex-col gap-4">
                         <div class="h-14 w-14 rounded-xl bg-pink-100 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -159,7 +109,7 @@
                 </div>
 
                 <!-- Feature 3 -->
-                <div class="glass-card p-8 rounded-2xl hover-scale">
+                <div class="bg-white/70 backdrop-blur border border-white/10 shadow-md p-8 rounded-2xl transition-transform duration-300 hover:scale-[1.03]">
                     <div class="flex flex-col gap-4">
                         <div class="h-14 w-14 rounded-xl bg-blue-100 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -185,7 +135,7 @@
         <div class="absolute inset-0 bg-gradient-to-b from-purple-50/20 to-white/0 -z-10"></div>
 
         <div class="max-w-5xl mx-auto px-6 md:px-12">
-            <div class="glass-card rounded-3xl p-12 md:p-16 text-center">
+            <div class="bg-white/70 backdrop-blur border border-white/10 shadow-md rounded-3xl p-12 md:p-16 text-center">
                 <h2 class="text-3xl md:text-4xl font-bold mb-6">
                     Ready to transform your workflow?
                 </h2>

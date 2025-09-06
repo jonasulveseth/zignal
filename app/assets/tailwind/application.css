@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+/*
+  Site-wide components/utilities extracted from the homepage inline <style> block
+  so views stay clean and styles are cached and reusable.
+*/
+
+@layer utilities {
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .animate-float { animation: float 6s ease-in-out infinite; }
+}

@@ -24,7 +24,7 @@
 
   <body>
     <%= render "shared/header" %>
-    <main class="<%= content_for?(:main_class) ? yield(:main_class) : 'mt-4 md:mt-24' %>">
+    <main class="<%= content_for?(:main_class) ? yield(:main_class) : 'mt-4 md:mt-16 2xl:mt-24' %>">
         <%= yield %>
     </main>
     <%= render "shared/footer" %>
