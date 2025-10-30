@@ -1,4 +1,45 @@
-<div>
-  <h1 class="font-bold text-4xl">Registrations#new</h1>
-  <p>Find me in app/views/registrations/new.html.erb</p>
+<% content_for :title, "Create your account" %>
+
+<div class="max-w-md mx-auto mt-24 md:mt-28 mb-24 px-6">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">Skapa konto</h1>
+
+  <% if @user && @user.errors.any? %>
+    <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
+      <h2 class="text-sm font-semibold text-red-700 mb-2">
+        Det finns <%= @user.errors.count %> fel som behöver rättas till:
+      </h2>
+      <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+        <% @user.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with model: @user, url: registration_path, class: "space-y-5" do |f| %>
+    <div>
+      <%= f.label :email_address, "E-post", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.email_field :email_address, required: true, autofocus: true, autocomplete: "email", class: "w-full rounded-xl border-gray-200 focus:border-purple-300 focus:ring-purple-300" %>
+    </div>
+
+    <div>
+      <%= f.label :password, "Lösenord", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.password_field :password, required: true, minlength: 8, autocomplete: "new-password", class: "w-full rounded-xl border-gray-200 focus:border-purple-300 focus:ring-purple-300" %>
+      <p class="mt-1 text-xs text-gray-500">Minst 8 tecken.</p>
+    </div>
+
+    <div>
+      <%= f.label :password_confirmation, "Bekräfta lösenord", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.password_field :password_confirmation, required: true, autocomplete: "new-password", class: "w-full rounded-xl border-gray-200 focus:border-purple-300 focus:ring-purple-300" %>
+    </div>
+
+    <div class="pt-2">
+      <%= f.submit "Skapa konto", class: "w-full px-4 py-2 text-sm bg-purple-400 text-white hover:shadow-lg hover:shadow-purple-200/30 rounded-xl font-medium transition-all duration-300" %>
+    </div>
+  <% end %>
+
+  <div class="mt-6 text-center text-sm text-gray-600">
+    Har du redan ett konto?
+    <%= link_to "Logga in", new_session_path, class: "text-purple-500 hover:underline" %>
+  </div>
 </div>
